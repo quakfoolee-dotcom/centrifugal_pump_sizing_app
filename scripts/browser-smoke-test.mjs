@@ -13,7 +13,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const APP_VERSION = "0.10.20";
+const APP_VERSION = "0.10.21";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
@@ -276,8 +276,14 @@ async function waitForEval(cdp, sessionId, expression, description, timeoutMs = 
 function setupPageHarnessScript() {
   return `(() => {
     window.__alerts = [];
+    window.__confirms = [];
+    window.__confirmResult = true;
     window.__printCalls = [];
     window.alert = (message) => window.__alerts.push(String(message));
+    window.confirm = (message) => {
+      window.__confirms.push(String(message));
+      return window.__confirmResult;
+    };
     window.print = () => {
       window.__printCalls.push(document.querySelector('.view.active')?.dataset.screenLabel || '');
     };
@@ -305,6 +311,32 @@ function setInputScript(selector, value, index = 0) {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
     return true;
+  })()`;
+}
+
+function selectValueScript(selector, value, index = 0) {
+  return `(() => {
+    const select = [...document.querySelectorAll(${JSON.stringify(selector)})][${index}];
+    if (!select) return false;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set;
+    setter.call(select, ${JSON.stringify(value)});
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+  })()`;
+}
+
+function setFieldByLabelScript(label, value, blur = true) {
+  return `(() => {
+    const row = [...document.querySelectorAll('.field')]
+      .find(node => (node.querySelector('.name')?.textContent || '').includes(${JSON.stringify(label)}));
+    const input = row?.querySelector('input');
+    if (!input) return null;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    input.focus();
+    setter.call(input, ${JSON.stringify(value)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    if (${JSON.stringify(blur)}) input.blur();
+    return input.value;
   })()`;
 }
 
@@ -397,7 +429,9 @@ async function main() {
     assert(await evaluate(cdp, sessionId, clickTextScript("Save")), "Save button should be clickable");
     assert(await waitForEval(cdp, sessionId, `(() => {
       const cases = JSON.parse(localStorage.getItem('pumpcalc:cases') || '{}');
-      return cases['Browser Smoke Case']?.meta?.tag === 'P-BROWSER';
+      const baseline = JSON.parse(localStorage.getItem('pumpcalc:baseline') || '{}');
+      return cases['Browser Smoke Case']?.meta?.tag === 'P-BROWSER'
+        && baseline?.meta?.tag === 'P-BROWSER';
     })()`, "saved case in localStorage"), "saved case should persist in localStorage");
 
     await setMetadata(cdp, sessionId, 1, "P-BROWSER-EDIT");
@@ -405,6 +439,16 @@ async function main() {
     const exported = await waitForDownloadedJson(downloadDir);
     assert(exported.payload.schema === "pumpcalc.case.v1", "downloaded export should use the case schema");
     assert(exported.payload.state?.meta?.tag === "P-BROWSER-EDIT", "downloaded export should contain current live metadata");
+
+    assert(await evaluate(cdp, sessionId, selectValueScript(".case-sel", "Browser Smoke Case")), "saved case should be selectable for load");
+    assert(await waitForEval(cdp, sessionId, `(() => {
+      const cases = JSON.parse(localStorage.getItem('pumpcalc:cases') || '{}');
+      const snapshotName = Object.keys(cases).find(name => name.startsWith('Before load '));
+      return window.__confirms.some(message => message.includes('Before load'))
+        && snapshotName
+        && cases[snapshotName]?.meta?.tag === 'P-BROWSER-EDIT'
+        && [...document.querySelectorAll('.text-field input')][1]?.value === 'P-BROWSER';
+    })()`, "dirty load snapshot"), "loading a saved case should protect unsaved current work with a snapshot");
 
     const invalidPath = path.join(uploadDir, "invalid-library.json");
     writeFileSync(invalidPath, JSON.stringify({ foo: { bar: 1 } }), "utf8");
@@ -454,13 +498,23 @@ async function main() {
     assert(await evaluate(cdp, sessionId, clickTextScript("US")), "US unit toggle should be clickable");
     assert(await waitForEval(cdp, sessionId, `document.querySelector('.brand-sub')?.textContent.includes('US')`, "US unit label"), "unit toggle should update the app shell");
 
+    const focusedDraft = await evaluate(cdp, sessionId, setFieldByLabelScript("Energy price", "12.", false));
+    assert(focusedDraft === "12.", "focused numeric input should preserve a partial decimal draft");
+    assert(await evaluate(cdp, sessionId, setFieldByLabelScript("Energy price", "12,5", true)) === "12,5", "numeric input should accept comma decimal drafts before blur");
+    assert(await waitForEval(cdp, sessionId, `(() => {
+      const price = JSON.parse(localStorage.getItem('pumpcalc:v4') || '{}').econ?.price;
+      const row = [...document.querySelectorAll('.field')]
+        .find(node => (node.querySelector('.name')?.textContent || '').includes('Energy price'));
+      return price === 12.5 && row?.querySelector('input')?.value === '12.5';
+    })()`, "comma decimal numeric commit"), "numeric input should parse comma decimals on commit");
+
     assert(await evaluate(cdp, sessionId, clickTextScript("03 Compare")), "Compare tab should be clickable before print");
     assert(await waitForEval(cdp, sessionId, `document.querySelector('.view.active')?.dataset.screenLabel === '03 Compare'`, "compare view before print"), "Compare view should be active before print test");
     assert(await evaluate(cdp, sessionId, clickTextScript("Print Report / PDF")), "Print Report / PDF button should be clickable");
     assert(await waitForEval(cdp, sessionId, `window.__printCalls.at(-1) === '02 Report'`, "report print routing"), "print should route through Report view");
 
     assert(cdp.exceptions.length === 0, `browser runtime exceptions:\n${cdp.exceptions.join("\n")}`);
-    console.log("browser-smoke-test: tabs, metadata, case import/export, localStorage, units, and report print passed");
+    console.log("browser-smoke-test: tabs, metadata, dirty-load snapshots, case import/export, numeric inputs, units, and report print passed");
   } finally {
     try { await cdp?.send("Browser.close"); } catch {}
     if (browserRef?.browser && !browserRef.browser.killed) browserRef.browser.kill();

@@ -78,7 +78,7 @@ const baseState = {
   op: { Q: 110 },
 };
 
-assert(PumpCases.APP_VERSION === "0.10.20", "app version helper should match this release");
+assert(PumpCases.APP_VERSION === "0.10.21", "app version helper should match this release");
 const editedState = {
   ...baseState,
   meta: { ...baseState.meta, tag: "LIVE-EDIT", docNo: "" },
@@ -125,12 +125,22 @@ assert(appHtml.includes("onClick={printReport}"), "print button should route thr
 assert(appHtml.includes("window.setTimeout(() => window.print(), 0)"), "print handler should not depend on a second animation frame");
 assert(appHtml.includes("Print Report / PDF"), "print button label should make report-only output explicit");
 assert(!appHtml.includes("meta?.docNo || \"CAL-HYD-0142\""), "status bar should not fall back to demo doc number");
+assert(appHtml.includes("protectCurrentWork"), "case loads/imports should guard unsaved active work");
+assert(appHtml.includes("Before ${action}"), "dirty load/import guard should create before-action snapshots");
+assert(appHtml.includes("pumpcalc:baseline"), "dirty-load protection should persist the last clean baseline across refresh");
 const appCss = readFileSync("styles.css", "utf8");
 assert(appCss.includes("@media print"), "print stylesheet should be present");
 assert(appCss.includes(".view[data-screen-label=\"02 Report\"]"), "print stylesheet should force the report view");
 const standaloneHtml = readFileSync("Pump_Calculator_standalone.html", "utf8");
 const standaloneHeaderCount = (standaloneHtml.match(/Centrifugal Pump Calculator/g) || []).length;
 assert(standaloneHeaderCount <= 1, "standalone build should not accumulate duplicate app CSS header comments");
+const chartJsx = readFileSync("components/PumpChart.jsx", "utf8");
+assert(chartJsx.includes("npshTicks") && chartJsx.includes("U.fmt(\"head\", n, 0)"), "chart should render an explicit NPSH tick scale");
+assert(chartJsx.includes("TARGET Q") && chartJsx.includes("SOLVED DUTY"), "chart should distinguish target flow from solved duty");
+assert(chartJsx.includes("onPointerDown") && chartJsx.includes("setPointerCapture"), "chart dragging should use pointer events");
+assert(!chartJsx.includes("onMouseDown={onDown}") && !chartJsx.includes("mousemove"), "chart should not depend on mouse-only drag listeners");
+const calculatorJsx = readFileSync("components/Calculator.jsx", "utf8");
+assert(calculatorJsx.includes("parseFieldDisplay") && calculatorJsx.includes("inputMode=\"decimal\""), "numeric fields should keep focused draft text and parse decimal input on commit");
 
 const US = makeUnits("US");
 assertNear(US.conv("flow", 1), 4.402868, 1e-6, "m3/h to gpm conversion");

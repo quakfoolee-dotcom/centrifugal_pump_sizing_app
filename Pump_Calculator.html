@@ -91,6 +91,7 @@ const {
   buildCaseLibraryExport,
   mergeState,
   parseCaseImport,
+  uniqueCaseName,
 } = window.PumpCases;
 
 function downloadJson(filename, data) {
@@ -105,8 +106,14 @@ function downloadJson(filename, data) {
   URL.revokeObjectURL(url);
 }
 
+function serializeCaseState(value) {
+  return JSON.stringify(value || {});
+}
+
 function App() {
   const [state, setState] = useState(initialState);
+  const baselineRef = useRef(serializeCaseState(initialState));
+  const skipInitialAutosaveRef = useRef(true);
   const [view, setView] = useState("calc");        // calc | report | compare
   const [density, setDensity] = useState(TWEAK_DEFAULTS.density);
   const [tweaksOn, setTweaksOn] = useState(false);
@@ -119,13 +126,24 @@ function App() {
     try {
       const saved = JSON.parse(localStorage.getItem("pumpcalc:v4") || "null");
       if (saved) {
-        setState(s => mergeState(s, saved));
+        const merged = mergeState(initialState, saved);
+        const savedBaseline = localStorage.getItem("pumpcalc:baseline");
+        baselineRef.current = savedBaseline != null ? savedBaseline : serializeCaseState(merged);
+        setState(merged);
+      } else {
+        baselineRef.current = serializeCaseState(initialState);
       }
       const savedView = localStorage.getItem("pumpcalc:view");
       if (savedView) setView(savedView);
     } catch {}
   }, []);
-  useEffect(() => { localStorage.setItem("pumpcalc:v4", JSON.stringify(state)); }, [state]);
+  useEffect(() => {
+    if (skipInitialAutosaveRef.current) {
+      skipInitialAutosaveRef.current = false;
+      return;
+    }
+    localStorage.setItem("pumpcalc:v4", JSON.stringify(state));
+  }, [state]);
   useEffect(() => { localStorage.setItem("pumpcalc:view", view); }, [view]);
 
   useEffect(() => {
@@ -146,22 +164,64 @@ function App() {
   // Saved-case library
   const [cases, setCases] = useState({});
   const [caseName, setCaseName] = useState("");
+  const markCleanState = (nextState) => {
+    const snapshot = serializeCaseState(nextState);
+    baselineRef.current = snapshot;
+    localStorage.setItem("pumpcalc:baseline", snapshot);
+  };
+  const markNoSavedBaseline = () => {
+    baselineRef.current = "";
+    localStorage.setItem("pumpcalc:baseline", "");
+  };
   useEffect(() => {
     try { setCases(JSON.parse(localStorage.getItem("pumpcalc:cases") || "{}")); } catch {}
   }, []);
   const writeCases = (next) => { setCases(next); localStorage.setItem("pumpcalc:cases", JSON.stringify(next)); };
+  const currentWorkIsDirty = () => serializeCaseState(state) !== baselineRef.current;
+  const protectCurrentWork = (action, existingCases) => {
+    const existing = existingCases || {};
+    if (!currentWorkIsDirty()) return { cases: existing, snapshotName: "" };
+    const ok = window.confirm(
+      `Current work has changes since the last saved, loaded, or imported case. Save a "Before ${action}" snapshot and continue?`
+    );
+    if (!ok) {
+      setCaseNotice(`${action} cancelled.`);
+      return null;
+    }
+    const stamp = new Date().toISOString().slice(0, 16).replace("T", " ");
+    const snapshotName = uniqueCaseName(`Before ${action} ${stamp}`, existing);
+    return {
+      cases: { ...existing, [snapshotName]: state },
+      snapshotName,
+    };
+  };
   const saveCase = () => {
     const name = (caseName || "").trim() || `Case ${Object.keys(cases).length + 1}`;
-    writeCases({ ...cases, [name]: state });
+    const next = { ...cases, [name]: state };
+    writeCases(next);
+    markCleanState(state);
     setCaseName(name);
     setCaseNotice(`Saved "${name}".`);
   };
-  const loadCase = (name) => { if (cases[name]) setState(mergeState(initialState, cases[name])); setCaseName(name); };
+  const loadCase = (name) => {
+    if (!cases[name]) return;
+    const protectedWork = protectCurrentWork("load", cases);
+    if (!protectedWork) return;
+    writeCases(protectedWork.cases);
+    const nextState = mergeState(initialState, protectedWork.cases[name]);
+    markCleanState(nextState);
+    setState(nextState);
+    setCaseName(name);
+    setCaseNotice(`${protectedWork.snapshotName ? `Saved snapshot "${protectedWork.snapshotName}". ` : ""}Loaded "${name}".`);
+  };
   const delCase = (name) => {
     const n = { ...cases };
     delete n[name];
     writeCases(n);
-    if (caseName === name) setCaseName("");
+    if (caseName === name) {
+      setCaseName("");
+      markNoSavedBaseline();
+    }
     setCaseNotice(`Deleted "${name}".`);
   };
   const exportCase = () => {
@@ -183,12 +243,21 @@ function App() {
       try {
         const payload = JSON.parse(reader.result);
         const result = parseCaseImport(payload, file.name, cases, initialState);
-        writeCases(result.cases);
+        let nextCases = result.cases;
+        let snapshotName = "";
         if (result.activeState) {
+          const protectedWork = protectCurrentWork("import", result.cases);
+          if (!protectedWork) return;
+          nextCases = protectedWork.cases;
+          snapshotName = protectedWork.snapshotName;
+        }
+        writeCases(nextCases);
+        if (result.activeState) {
+          markCleanState(result.activeState);
           setCaseName(result.activeName);
           setState(result.activeState);
         }
-        setCaseNotice(result.message);
+        setCaseNotice(`${snapshotName ? `Saved snapshot "${snapshotName}". ` : ""}${result.message}`);
       } catch (err) {
         alert(`Could not import case JSON: ${err.message}`);
         setCaseNotice("Import failed.");

@@ -25,6 +25,78 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.21 - High-Impact UX Safety Pass
+
+**Objective**
+
+Implement the top-ranked UX findings that could cause chart misreading, active
+case data loss, or daily numeric-entry friction before moving on to lower-ranked
+workflow polish.
+
+**Before Fix**
+
+- NPSHa and NPSHr curves were drawn on a hidden 0-20 head scale while the
+  visible right-axis tick labels only showed the 0-100 efficiency scale.
+- Loading a saved case or importing a single active case replaced the live state
+  without warning, and autosave then persisted the overwrite.
+- Numeric fields reformatted on every keystroke, which could fight partial
+  decimal entry such as `12.` and did not support comma decimal input.
+- The draggable crosshair looked like the main result even though the results
+  bar is based on the solved pump/system duty point.
+- Chart dragging used mouse-only event listeners.
+
+**After Fix**
+
+- Added blue NPSH tick labels on the inner right axis while retaining the
+  efficiency tick labels on the outer right axis.
+- Labeled and enlarged the solved duty marker, and relabeled the draggable
+  crosshair as `TARGET Q` with the VFD speed implication.
+- Replaced mouse-only chart dragging with pointer events and pointer capture.
+- Added dirty-state protection for saved-case loads and active single-case
+  imports. When the user confirms, the app saves a uniquely named `Before load`
+  or `Before import` snapshot before replacing the active state. The clean
+  baseline is persisted separately from autosave so unsaved autosaved work is
+  still protected after a page refresh.
+- Reworked `Field` numeric inputs to keep draft text while focused, parse on
+  blur/Enter, clamp to internal min/max limits, and accept comma decimals.
+- Bumped the shared app version to `0.10.21` and expanded smoke coverage.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `Pump_Calculator.html`
+- `Pump_Calculator_standalone.html`
+- `components/Calculator.jsx`
+- `components/PumpChart.jsx`
+- `docs/engineering_change_record.md`
+- `docs/smoke_test_matrix.md`
+- `lib/caseLibrary.js`
+- `scripts/browser-smoke-test.mjs`
+- `scripts/smoke-test.mjs`
+
+**QC Results**
+
+- `npm run test` passed.
+- `npm run verify:formulas` passed.
+- `npm run build:standalone` passed.
+- `npm run test:browser` passed.
+- `git diff --check` passed. Git emitted line-ending normalization warnings
+  for edited text files, but no whitespace errors.
+
+**Remaining Risk**
+
+This pass resolves the first five high-impact UX issues. Lower-ranked workflow
+items remain open, including warning-pill grouping, a dedicated New Case flow,
+passive chart hover readouts, fuller case management, shareable case links,
+keyboard/ARIA polish, PDF filename control, density-toggle exposure, and drag
+performance memoization.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.20 - Formula Verifier Reference Document
 
 **Objective**

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.21] - 2026-07-08
+
+- Added explicit NPSH tick labels on the chart right axis so NPSHa/NPSHr curves are not read against the efficiency scale.
+- Rebalanced chart markers so the solved pump/system duty point is labeled as the primary result and the draggable crosshair is labeled as the target-flow VFD probe.
+- Switched chart dragging from mouse-only listeners to pointer events for mouse, touch, and pen support.
+- Added dirty-work protection for saved-case loads and active single-case imports, with optional automatic `Before load` / `Before import` snapshots.
+- Reworked numeric fields to preserve focused draft text, parse on blur/Enter, and accept comma decimals.
+- Expanded source and browser smoke tests for chart UX wiring, dirty-load snapshots, and numeric input behavior; bumped the shared app version to `0.10.21`.
+
 ## [0.10.20] - 2026-07-08
 
 - Added `docs/verify_formulas_reference.md`, a LaTeX-style reference document for the 82 checks in `scripts/verify-formulas.mjs`.

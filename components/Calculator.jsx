@@ -5,22 +5,69 @@ const { useMemo, useState, useRef, useEffect } = React;
 // Module-level units helper, refreshed at the top of each Calculator render.
 let U = window.makeUnits("SI");
 
+const formatFieldDisplay = (value) => {
+  if (!Number.isFinite(value)) return "";
+  return String(+value.toFixed(3).replace(/\.?0+$/, ""));
+};
+
+const parseFieldDisplay = (value) => {
+  const normalized = String(value ?? "").trim().replace(",", ".");
+  if (!normalized) return NaN;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : NaN;
+};
+
 const Field = ({ label, sub, value, unit, qty = "none", onChange, step = 1, min, max, locked = false }) => {
   const useU = qty !== "none";
   const disp = useU ? U.conv(qty, value) : value;
   const unitLabel = useU ? U.unit(qty) : unit;
+  const displayValue = formatFieldDisplay(disp);
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState(displayValue);
+  const cancelCommitRef = useRef(false);
+
+  useEffect(() => {
+    if (!focused) setDraft(displayValue);
+  }, [displayValue, focused]);
+
+  const commit = () => {
+    if (cancelCommitRef.current) {
+      cancelCommitRef.current = false;
+      setFocused(false);
+      setDraft(displayValue);
+      return;
+    }
+    setFocused(false);
+    const raw = parseFieldDisplay(draft);
+    if (!Number.isFinite(raw)) {
+      setDraft(displayValue);
+      return;
+    }
+    let next = useU ? U.toSI(qty, raw) : raw;
+    if (Number.isFinite(min)) next = Math.max(min, next);
+    if (Number.isFinite(max)) next = Math.min(max, next);
+    onChange(next);
+    setDraft(formatFieldDisplay(useU ? U.conv(qty, next) : next));
+  };
+
   return (
     <div className={"field" + (locked ? " locked" : "")}>
       <div className="name">{label}{sub ? <span className="sub">{sub}</span> : null}</div>
       <input
-        type="number"
-        value={Number.isFinite(disp) ? +disp.toFixed(3).replace(/\.?0+$/, "") : disp}
-        step={step}
-        min={min}
-        max={max}
-        onChange={(e) => {
-          const raw = parseFloat(e.target.value);
-          onChange(useU && Number.isFinite(raw) ? U.toSI(qty, raw) : raw);
+        type="text"
+        inputMode="decimal"
+        value={focused ? draft : displayValue}
+        data-step={step}
+        onFocus={() => { cancelCommitRef.current = false; setFocused(true); setDraft(displayValue); }}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+          if (e.key === "Escape") {
+            cancelCommitRef.current = true;
+            setDraft(displayValue);
+            e.currentTarget.blur();
+          }
         }}
         readOnly={locked}
       />
@@ -439,6 +486,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
             U={U}
             Qmax={Qmax}
             dutyPoint={dutyPoint}
+            targetSpeedLabel={speedLabel}
             setOp={(patch) => setState(s => ({ ...s, op: { ...s.op, ...patch } }))}
           />
         </div>

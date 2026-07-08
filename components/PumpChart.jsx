@@ -1,6 +1,6 @@
 // PumpChart.jsx — SVG chart with Q vs H, efficiency, NPSHr, NPSHa, system curve, op point.
 
-const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, U, width = 820, height = 460, Qmax = 220, dutyPoint }) => {
+const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, U, width = 820, height = 460, Qmax = 220, dutyPoint, targetSpeedLabel }) => {
   const PM = window.PumpMath;
   U = U || window.makeUnits("SI");
   Qmax = Math.max(
@@ -77,12 +77,16 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
   const qStep = Qmax <= 100 ? 20 : Qmax <= 250 ? 40 : 50;
   for (let q = 0; q <= Qmax; q += qStep) qTicks.push(q);
   const rTicks = [0, 25, 50, 75, 100];
+  const npshTicks = [0, 5, 10, 15, 20];
 
   // Op point (user-draggable on curve)
   const opH = PM.combinedH(op.Q, pump);
   const opEta = PM.combinedEta(op.Q, pump);
   const opNPSHr = PM.combinedNPSHr(op.Q, pump);
   const opNPSHa = PM.npshAvailable(op.Q, sys);
+  const targetLabelX = Math.min(sx(op.Q) + 10, M.l + iw - 136);
+  const targetLabelY = Math.max(M.t + 8, Math.min(syH(opH) - 34, M.t + ih - 60));
+  const targetSpeedText = targetSpeedLabel ? `N ${targetSpeedLabel} rpm` : "N n/a";
 
   // BEP point (combined set)
   const bepQ = PM.combinedBEPflow(pump);
@@ -96,12 +100,11 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
 
   // System/pump intersection (combined)
   const cross = dutyPoint || PM.operatingPointCombined(pump, sys, Qmax);
+  const dutyLabelLeft = cross.Q > Qmax * 0.65;
 
   const svgRef = React.useRef(null);
-  const dragging = React.useRef(false);
-  // Mount-bound handlers below close over this ref, not over props/derived
-  // values directly — Qmax/M/iw change (e.g. switching pump arrangement)
-  // without the window listeners ever being re-attached.
+  const activePointer = React.useRef(null);
+  // Pointer handlers read this ref so Qmax/M/iw can change without stale event math.
   const latest = React.useRef();
   latest.current = { Qmax, M, iw, W, setOp };
 
@@ -114,25 +117,37 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
     return q;
   };
 
-  const onDown = (e) => { dragging.current = true; latest.current.setOp({ Q: toQ(e.clientX) }); e.preventDefault(); };
-  const onMove = (e) => { if (dragging.current) latest.current.setOp({ Q: toQ(e.clientX) }); };
-  const onUp   = () => { dragging.current = false; };
-
-  React.useEffect(() => {
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, []);
+  const moveTarget = (e) => latest.current.setOp({ Q: toQ(e.clientX) });
+  const onPointerDown = (e) => {
+    activePointer.current = e.pointerId;
+    if (svgRef.current && svgRef.current.setPointerCapture) {
+      svgRef.current.setPointerCapture(e.pointerId);
+    }
+    moveTarget(e);
+    e.preventDefault();
+  };
+  const onPointerMove = (e) => {
+    if (activePointer.current !== e.pointerId) return;
+    moveTarget(e);
+    e.preventDefault();
+  };
+  const onPointerUp = (e) => {
+    if (activePointer.current !== e.pointerId) return;
+    if (svgRef.current && svgRef.current.hasPointerCapture && svgRef.current.hasPointerCapture(e.pointerId)) {
+      svgRef.current.releasePointerCapture(e.pointerId);
+    }
+    activePointer.current = null;
+    e.preventDefault();
+  };
 
   // Efficiency band shading (80% of BEP .. 110% of BEP) — preferred operating region
   const porLo = bepQ * 0.8;
   const porHi = bepQ * 1.1;
 
   return (
-    <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" onMouseDown={onDown}>
+    <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{touchAction:"none"}}
+         onPointerDown={onPointerDown} onPointerMove={onPointerMove}
+         onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
       {/* Fine grid */}
       <g stroke="var(--rule-very-faint)" strokeWidth="1">
         {Array.from({ length: 21 }, (_, i) => {
@@ -200,7 +215,14 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
         <g key={"rt"+r}>
           <line x1={M.l + iw} y1={syEta(r)} x2={M.l + iw + 4} y2={syEta(r)} stroke="var(--rule)" />
           <text x={M.l + iw + 8} y={syEta(r) + 3}
-                fontFamily="var(--mono)" fontSize="10" fill="var(--mute)">{r}</text>
+                fontFamily="var(--mono)" fontSize="10" fill="var(--accent)">{r}</text>
+        </g>
+      ))}
+      {npshTicks.map(n => (
+        <g key={"nt"+n}>
+          <line x1={M.l + iw - 4} y1={syN(n)} x2={M.l + iw} y2={syN(n)} stroke="var(--cool)" opacity="0.55" />
+          <text x={M.l + iw - 8} y={syN(n) + 3} textAnchor="end"
+                fontFamily="var(--mono)" fontSize="10" fill="var(--cool)">{U.fmt("head", n, 0)}</text>
         </g>
       ))}
       <text x={W - 14} y={M.t + ih / 2} textAnchor="middle"
@@ -262,14 +284,19 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
               fontFamily="var(--mono)" fontSize="10" fill="var(--ink-2)">BEP</text>
       </g>
 
-      {/* Intersection (system/pump duty) */}
+      {/* Solved system/pump duty point */}
       {cross.Q > 0 && (
-        <g>
+        <g className="duty-marker">
           <line x1={sx(cross.Q)} y1={M.t} x2={sx(cross.Q)} y2={M.t + ih}
-                stroke="var(--rule)" strokeDasharray="1 3" />
-          <circle cx={sx(cross.Q)} cy={syH(cross.H)} r="2.5" fill="var(--ink-2)" />
-          <text x={sx(cross.Q) + 6} y={M.t + 14}
-                fontFamily="var(--mono)" fontSize="10" fill="var(--mute)">duty · Q={uQ(cross.Q,1)}  H={uH(cross.H,1)}</text>
+                stroke="var(--ink)" strokeDasharray="1 3" opacity="0.45" />
+          <circle cx={sx(cross.Q)} cy={syH(cross.H)} r="5" fill="var(--paper)" stroke="var(--ink)" strokeWidth="1.5" />
+          <circle cx={sx(cross.Q)} cy={syH(cross.H)} r="2" fill="var(--ink)" />
+          <text x={sx(cross.Q) + (dutyLabelLeft ? -6 : 6)} y={M.t + 13}
+                textAnchor={dutyLabelLeft ? "end" : "start"}
+                fontFamily="var(--mono)" fontSize="9" fill="var(--ink)">SOLVED DUTY</text>
+          <text x={sx(cross.Q) + (dutyLabelLeft ? -6 : 6)} y={M.t + 26}
+                textAnchor={dutyLabelLeft ? "end" : "start"}
+                fontFamily="var(--mono)" fontSize="10" fill="var(--ink-2)">Q={uQ(cross.Q,1)}  H={uH(cross.H,1)}</text>
         </g>
       )}
 
@@ -296,14 +323,14 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
         </g>
       )}
 
-      {/* Draggable operating point (crosshair) */}
-      <g className="op-handle" onMouseDown={onDown}>
+      {/* Draggable target-flow point for VFD exploration */}
+      <g className="op-handle" opacity="0.78">
         <line x1={sx(op.Q)} y1={M.t} x2={sx(op.Q)} y2={M.t + ih}
-              stroke="var(--accent)" strokeWidth="0.75" />
+              stroke="var(--accent)" strokeWidth="0.75" strokeDasharray="4 3" opacity="0.65" />
         <line x1={M.l} y1={syH(opH)} x2={M.l + iw} y2={syH(opH)}
-              stroke="var(--accent)" strokeWidth="0.75" />
+              stroke="var(--accent)" strokeWidth="0.75" strokeDasharray="4 3" opacity="0.65" />
         {/* Outer ring */}
-        <circle cx={sx(op.Q)} cy={syH(opH)} r="7" fill="var(--paper)" stroke="var(--accent)" strokeWidth="1.25" />
+        <circle cx={sx(op.Q)} cy={syH(opH)} r="5" fill="var(--paper)" stroke="var(--accent)" strokeWidth="1.25" />
         <circle cx={sx(op.Q)} cy={syH(opH)} r="2" fill="var(--accent)" />
         {/* Eta marker on right axis */}
         <circle cx={sx(op.Q)} cy={syEta(opEta * 100)} r="3" fill="var(--accent)" />
@@ -312,17 +339,18 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
         <circle cx={sx(op.Q)} cy={syN(Math.max(0, opNPSHa))} r="2.5" fill="var(--paper)" stroke="var(--cool)" strokeWidth="1.25" />
 
         {/* Label block */}
-        <g transform={`translate(${sx(op.Q) + 10}, ${syH(opH) - 30})`}>
-          <rect x="0" y="0" width="118" height="44"
+        <g transform={`translate(${targetLabelX}, ${targetLabelY})`}>
+          <rect x="0" y="0" width="126" height="56"
                 fill="var(--paper)" stroke="var(--accent)" strokeWidth="0.75" />
-          <text x="8" y="14" fontFamily="var(--mono)" fontSize="10" fill="var(--ink)">
+          <text x="8" y="13" fontFamily="var(--mono)" fontSize="9" fill="var(--accent)">TARGET Q</text>
+          <text x="8" y="26" fontFamily="var(--mono)" fontSize="10" fill="var(--ink)">
             Q  {uQ(op.Q,1).padStart(6)} {U.unit("flow")}
           </text>
-          <text x="8" y="26" fontFamily="var(--mono)" fontSize="10" fill="var(--ink)">
+          <text x="8" y="38" fontFamily="var(--mono)" fontSize="10" fill="var(--ink)">
             H  {uH(opH,1).padStart(6)} {U.unit("head")}
           </text>
-          <text x="8" y="38" fontFamily="var(--mono)" fontSize="10" fill="var(--ink)">
-            η  {(opEta * 100).toFixed(1).padStart(6)} %
+          <text x="8" y="50" fontFamily="var(--mono)" fontSize="10" fill="var(--ink)">
+            VFD {targetSpeedText}
           </text>
         </g>
       </g>

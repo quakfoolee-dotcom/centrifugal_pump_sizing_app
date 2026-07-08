@@ -52,7 +52,7 @@ so it does not depend on CDN access during the test.
 
 ```text
 smoke-test: duty solve, parallel case, and pipe helpers passed
-browser-smoke-test: tabs, metadata, case import/export, localStorage, units, and report print passed
+browser-smoke-test: tabs, metadata, dirty-load snapshots, case import/export, numeric inputs, units, and report print passed
 verify-formulas: all 82 first-principles checks passed
 ```
 
@@ -76,20 +76,23 @@ calculation or workflow assertion that failed.
 | NPSH acceptance | Configurable absolute NPSH margin effect and default margin value. |
 | Motor sizing | Next IEC/NEMA motor selection, zero-duty motor behavior, and size-based motor efficiency trend. |
 | Fluid property flags | Estimated non-water preset flag and mineral-acid handling for sulfuric acid-style fluids. |
-| Case workflow | Current-state case export, valid single-case import, case-library import without active-state replacement, and invalid library rejection. |
-| App shell wiring | Main app loads the case helper, topbar uses the shared version, report-print handler is wired, report-print label is explicit, metadata status fallback is removed, and print CSS targets the report view. |
+| Case workflow | Current-state case export, valid single-case import, case-library import without active-state replacement, invalid library rejection, and dirty-load snapshot protection. |
+| Chart UX wiring | Explicit NPSH tick scale, target-flow label, solved-duty label, and pointer-event drag wiring. |
+| Numeric input UX | Focused draft text is preserved, comma decimals are accepted on commit, and numeric field parsing is covered in the browser workflow. |
+| App shell wiring | Main app loads the case helper, topbar uses the shared version, report-print handler is wired, report-print label is explicit, metadata status fallback is removed, dirty work is protected before destructive case transitions, and print CSS targets the report view. |
 | Standalone artifact hygiene | Committed standalone HTML does not accumulate duplicate app CSS header comments. |
 | Browser bootstrap | Standalone app loads in headless Chrome/Edge without CDN access and exposes the shared helpers. |
 | Browser navigation | Calculator, Report preview, and Compare tabs activate through click interactions. |
 | Browser metadata workflow | Report metadata fields are edited through real inputs and verified in the report titleblock. |
-| Browser case workflow | Save to localStorage, current-case JSON download, invalid JSON import alert, valid single-case import, valid library import, and a library containing a case named `state`. |
+| Browser case workflow | Save to localStorage, current-case JSON download, dirty saved-case load with automatic snapshot, invalid JSON import alert, valid single-case import, valid library import, and a library containing a case named `state`. |
+| Browser numeric workflow | Partial decimal draft preservation and comma-decimal parsing for a real calculator input. |
 | Browser unit workflow | SI to US toggle updates the visible app shell. |
 | Browser print workflow | `Print Report / PDF` routes from Compare to Report before invoking `window.print()`. |
 
 ## Not Covered Yet
 
-- Visual chart inspection, drag-handle behavior, and responsive layout
-  screenshots.
+- Visual chart inspection, full pointer-drag gesture validation, and responsive
+  layout screenshots.
 - Browser print-preview/PDF visual validation. The smoke test checks that print
   CSS and report-print routing are wired, but it does not inspect the print
   preview output or generated PDF pages.
