@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.13] - 2026-07-08
+
+- Added catalog auxiliary-data flags when a head catalog is present but efficiency or NPSHr points are estimated.
+- Added independent catalog extrapolation flags for rated flow and selected/VFD target flow, not only the solved duty point.
+- Prevented high-flow catalog efficiency from extrapolating upward when the last entered efficiency segment rises.
+- Added rich minimum-static VFD speed status and UI/report warnings when that speed is clamped or unsolved.
+- Added report disclosure for idealized parallel/series pump assumptions and updated the formula manual and smoke tests.
+
 ## [0.10.12] - 2026-07-08
 
 - Extrapolated catalog efficiency past the last entered efficiency point instead of holding it flat.

@@ -115,10 +115,15 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
     staticLift, presHead, TDH, Re_s, flowRegimeS, transitionalFlow,
     hasGenericReducer, minorLossesApprox,
     design, ratedQ, ratedHsys, ratedLeftOfBEP,
-    speedForDuty, speedForDutyStatus, speedForDutyClamped, speedTargetAffinityOk, minVfd,
+    speedForDuty, speedForDutyStatus, speedForDutyClamped, speedTargetAffinityOk,
+    minVfd, minVfdStatus, minVfdClamped, minVfdInvalid,
     econ, en,
     visc, viscActive, viscHighRisk, viscModelScreening, curveEstimated,
-    catalogHeadFlattened, catalogExtrap, catalogExtrapolated, fluidPropsEstimated,
+    catalogEtaEstimated, catalogNpshrEstimated,
+    catalogHeadFlattened, catalogExtrap, catalogExtrapolated,
+    catalogRatedExtrap, catalogRatedExtrapolated,
+    catalogSelectedExtrap, catalogSelectedExtrapolated,
+    fluidPropsEstimated,
     npshRatio, npshMarginAbs, margin, ratioActual, cavOk,
     bepQ, bepPct, qMin, belowMinFlow, highSuctionEnergy, inPOR,
     sN, sD,
@@ -127,6 +132,10 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
     speedForDutyStatus === "above-max" ? `>${speedForDuty.toFixed(0)}` :
     speedForDutyStatus === "below-min" ? `<${speedForDuty.toFixed(0)}` :
     Number.isFinite(speedForDuty) ? speedForDuty.toFixed(0) : "n/a";
+  const minVfdLabel =
+    minVfdStatus === "above-max" ? `>${minVfd.toFixed(0)}` :
+    minVfdStatus === "below-min" ? `<${minVfd.toFixed(0)}` :
+    Number.isFinite(minVfd) ? minVfd.toFixed(0) : "n/a";
   const canSetSpeed = !noDutyPoint && speedForDutyStatus === "solved" && speedTargetAffinityOk && Number.isFinite(speedForDuty);
   const vfdAffinityWarn = speedForDutyStatus === "solved" && !speedTargetAffinityOk;
   const motorSelectText = U.US
@@ -323,7 +332,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
               ))}
               <button className="btn" style={{marginTop:4, width:"100%"}} onClick={addCat}>+ add point</button>
               <div style={{fontSize:10, color:"var(--mute)", marginTop:6, lineHeight:1.4}}>
-                Head uses monotone interpolation through entered points; rising head entries are flattened and flagged. η/NPSHr are optional and extrapolated past the last point. Points are at N₀, D₀.
+                Head uses monotone interpolation through entered points; rising head entries are flattened and flagged. Enter at least two η and NPSHr points to avoid estimated auxiliary curves. High-flow η extrapolation is not allowed to increase. Points are at N₀, D₀.
               </div>
             </div>
           )}
@@ -362,7 +371,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
             </span>
           </div>
           <div className="kv"><span className="k">Speed for selected Q</span><span className="v">{speedLabel}</span><span className="u">rpm</span></div>
-          <div className="kv"><span className="k">Min speed (static)</span><span className="v">{minVfd.toFixed(0)}</span><span className="u">rpm</span></div>
+          <div className="kv"><span className="k">Min speed (static)</span><span className="v">{minVfdLabel}</span><span className="u">rpm</span></div>
           <div style={{padding:"6px var(--pad) 10px"}}>
             <button className="btn" style={{width:"100%"}} disabled={!canSetSpeed}
                     onClick={() => canSetSpeed && set("pump")({ N: Math.round(speedForDuty) })}>↳ Set speed to hold selection</button>
@@ -440,21 +449,30 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           <div className="res-cell"><span className="k">NPSH mgn</span><span className="v" style={{color: cavOk ? "var(--ok)" : "var(--bad)"}}>{U.fmt("head", margin, 2)}</span><span className="u">{U.unit("head")}</span></div>
         </div>
 
-        {(noDutyPoint || affinityOutOfBounds || speedForDutyClamped || vfdAffinityWarn || belowMinFlow || !cavOk || highSuctionEnergy || !inPOR ||
+        {(noDutyPoint || affinityOutOfBounds || speedForDutyClamped || vfdAffinityWarn || minVfdClamped || minVfdInvalid ||
+          belowMinFlow || !cavOk || highSuctionEnergy || !inPOR ||
           !ratedLeftOfBEP || viscActive || viscHighRisk || viscModelScreening || curveEstimated ||
-          catalogExtrapolated || catalogHeadFlattened || fluidPropsEstimated ||
+          catalogEtaEstimated || catalogNpshrEstimated ||
+          catalogExtrapolated || catalogRatedExtrapolated || catalogSelectedExtrapolated ||
+          catalogHeadFlattened || fluidPropsEstimated ||
           transitionalFlow || minorLossesApprox) && (
           <div style={{display:"flex", flexWrap:"wrap", gap:8, padding:"8px var(--pad)", borderTop:"var(--hair)"}}>
             {noDutyPoint && <span className="pill bad">◆ No achievable duty point — pump/system mismatch</span>}
             {affinityOutOfBounds && <span className="pill bad">◆ Affinity limits exceeded · {affinity.messages.join(", ")}</span>}
             {speedForDutyClamped && <span className="pill warn">▲ VFD target outside 150-6000 rpm</span>}
             {vfdAffinityWarn && <span className="pill warn">▲ VFD target outside affinity range</span>}
+            {minVfdClamped && <span className="pill warn">▲ Min static VFD speed outside 150-6000 rpm</span>}
+            {minVfdInvalid && <span className="pill warn">▲ Min static VFD speed cannot be solved</span>}
             {belowMinFlow && <span className="pill bad">◆ Below min flow — recirculation / overheating</span>}
             {!noDutyPoint && !cavOk && <span className="pill bad">◆ NPSH ratio {ratioActual.toFixed(2)} &lt; {npshRatio.toFixed(2)} req.</span>}
             {highSuctionEnergy && <span className="pill warn">▲ High suction energy · Nss {Nss.toFixed(0)}</span>}
             {!noDutyPoint && !inPOR && !belowMinFlow && <span className="pill warn">▲ Outside preferred region ({bepPct.toFixed(0)}% BEP)</span>}
             {curveEstimated && <span className="pill warn">▲ Estimated pump curve — add vendor catalog points</span>}
             {catalogExtrapolated && <span className="pill warn">▲ Catalog curve extrapolated {catalogExtrap.above ? "above" : "below"} entered flow range</span>}
+            {catalogRatedExtrapolated && <span className="pill warn">▲ Rated point extrapolated {catalogRatedExtrap.above ? "above" : "below"} catalog flow range</span>}
+            {catalogSelectedExtrapolated && <span className="pill warn">▲ Selected/VFD target extrapolated {catalogSelectedExtrap.above ? "above" : "below"} catalog flow range</span>}
+            {catalogEtaEstimated && <span className="pill warn">▲ Catalog efficiency estimated — enter η points</span>}
+            {catalogNpshrEstimated && <span className="pill warn">▲ Catalog NPSHr estimated — enter NPSHr points</span>}
             {catalogHeadFlattened && <span className="pill warn">▲ Catalog head data flattened — check rising/unstable curve</span>}
             {fluidPropsEstimated && <span className="pill warn">▲ Preset fluid properties are estimated</span>}
             {transitionalFlow && <span className="pill warn">▲ Transitional suction Reynolds number</span>}
@@ -553,7 +571,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         </div>
 
         <div style={{padding:"10px var(--pad) 16px", color:"var(--mute)", fontSize:11, lineHeight:1.5}}>
-          Model: Darcy–Weisbach + Churchill friction · {curveEstimated ? "estimated parametric pump curve" : "monotone catalog interpolation with extrapolation/flattening flags"} · bounded affinity Q∝ND, H∝(ND)² · flow/Ns-aware screening viscous correction with conservative NPSHr factor · generic fitting K library · configurable NPSH ratio and absolute margin · min flow &amp; Nss stability limits · Ns = N·√Q/H<sup>0.75</sup>.
+          Model: Darcy–Weisbach + Churchill friction · {curveEstimated ? "estimated parametric pump curve" : "monotone catalog interpolation with data-completeness, extrapolation, and flattening flags"} · bounded affinity Q∝ND, H∝(ND)² · flow/Ns-aware screening viscous correction with conservative NPSHr factor · generic fitting K library · configurable NPSH ratio and absolute margin · min flow &amp; Nss stability limits · Ns = N·√Q/H<sup>0.75</sup>.
         </div>
       </div>
     </div>

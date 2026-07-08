@@ -22,9 +22,77 @@ These items were identified during engineering review and are not fully closed:
 
 - Verify viscosity correction calibration against the actual HI 9.6.7 chart or newer equation method.
 - Improve non-water fluid property handling beyond the current screening preset correlations.
-- Disclose idealized parallel and series pump assumptions in the report.
 
 ## Change Records
+
+### 0.10.13 - Catalog Auxiliary QC And VFD Status
+
+**Objective**
+
+Close the latest audit findings around catalog auxiliary data, catalog
+extrapolation scope, optimistic efficiency extrapolation, minimum VFD speed
+status, and report disclosure of multi-pump idealizations.
+
+**Before Fix**
+
+- A head-only catalog could make efficiency and NPSHr look catalog-backed even
+  though they were estimated from fallback logic.
+- Catalog extrapolation warnings only checked the solved duty point, not the
+  rated point or selected/VFD target.
+- High-flow catalog efficiency extrapolated with the terminal slope even when
+  the last entered efficiency segment was rising.
+- Minimum static VFD speed was displayed as a plain number without reachability
+  status.
+- Reports did not disclose the ideal equal-split parallel and ideal head-addition
+  series assumptions.
+
+**After Fix**
+
+- Added catalog auxiliary-data status for estimated efficiency and NPSHr curves.
+- Added independent duty, rated, and selected/VFD target catalog range flags.
+- Capped rising-terminal high-flow efficiency extrapolation at the last entered
+  efficiency value.
+- Added `minVfdSpeedResult()` with solve status while retaining the numeric
+  `minVfdSpeed()` wrapper for compatibility.
+- Added calculator, report, and compare flags for the new statuses.
+- Added report notes for idealized parallel and series pump assumptions.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `components/Calculator.jsx`
+- `components/Compare.jsx`
+- `components/Report.jsx`
+- `docs/engineering_change_record.md`
+- `docs/mathematical_formula_manual.md`
+- `lib/duty.js`
+- `lib/pumpMath.js`
+- `scripts/smoke-test.mjs`
+- `Pump_Calculator_standalone.html`
+
+**QC Results**
+
+- Added smoke-test coverage for head-only catalog auxiliary flags.
+- Added smoke-test coverage for rising-terminal catalog efficiency behavior.
+- Added smoke-test coverage for rated and selected/VFD target catalog
+  extrapolation flags.
+- Added smoke-test coverage for rich minimum VFD speed status.
+- `npm run test` passed.
+- `npm run build:standalone` passed.
+- `git diff --check` passed with line-ending warnings only.
+
+**Remaining Risk**
+
+Catalog extrapolation remains lower-confidence than vendor-tested points even
+when flagged. The viscosity correction coefficients and non-water fluid
+properties remain screening approximations until validated against HI/vendor
+data.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
 
 ### 0.10.12 - Catalog Curve And Fluid QC Flags
 

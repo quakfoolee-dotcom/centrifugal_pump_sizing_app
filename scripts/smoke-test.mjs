@@ -139,6 +139,19 @@ const catalogPump = {
 };
 assertNear(PM.pumpH(0, catalogPump), 40, 1e-9, "catalog shutoff point participates in head fit");
 assert(Number.isFinite(PM.pumpH(0, { ...referencePump, useCatalog: true, catalog: [{ q: 0, h: 40 }, { q: 0, h: 41 }] })), "insufficient catalog data should fall back safely");
+const headOnlyCatalogPump = {
+  ...referencePump,
+  useCatalog: true,
+  catalog: [
+    { q: 0, h: 40 },
+    { q: 120, h: 32 },
+    { q: 200, h: 17 },
+  ],
+};
+const headOnlyAux = PM.catalogAuxStatus(headOnlyCatalogPump);
+assert(headOnlyAux.hasCatalog && headOnlyAux.etaEstimated && headOnlyAux.npshrEstimated, "head-only catalog should flag estimated eta and NPSHr auxiliary curves");
+const headOnlyDuty = computeDuty({ ...baseState, pump: headOnlyCatalogPump });
+assert(headOnlyDuty.catalogEtaEstimated && headOnlyDuty.catalogNpshrEstimated, "computeDuty should expose estimated catalog eta/NPSHr flags");
 const nonMonotoneCatalogPump = {
   ...referencePump,
   useCatalog: true,
@@ -153,6 +166,16 @@ assert(PM.catalogHeadStatus(nonMonotoneCatalogPump).flattened, "rising catalog h
 assert(PM.pumpH(200, nonMonotoneCatalogPump) <= PM.pumpH(100, nonMonotoneCatalogPump), "catalog head should be forced non-increasing with flow");
 assert(PM.pumpH(400, nonMonotoneCatalogPump) <= PM.pumpH(200, nonMonotoneCatalogPump), "catalog high-flow extrapolation should not rise");
 assert(PM.pumpEta(300, catalogPump) < PM.pumpEta(200, catalogPump), "catalog efficiency should extrapolate downward past the last point");
+const risingEtaCatalogPump = {
+  ...referencePump,
+  useCatalog: true,
+  catalog: [
+    { q: 0, h: 40, eta: 0.40, npshr: 2.0 },
+    { q: 100, h: 32, eta: 0.65, npshr: 3.0 },
+    { q: 150, h: 25, eta: 0.78, npshr: 4.0 },
+  ],
+};
+assertNear(PM.pumpEta(250, risingEtaCatalogPump), 0.78, 1e-12, "rising terminal catalog eta should not extrapolate optimistically above the last point");
 const catalogRangeStatus = PM.catalogExtrapolationStatus(catalogPump, 250);
 assert(catalogRangeStatus.above && catalogRangeStatus.outside, "flow above entered catalog range should be flagged");
 const catalogExtrapDuty = computeDuty({
@@ -171,6 +194,25 @@ const catalogExtrapDuty = computeDuty({
   },
 });
 assert(catalogExtrapDuty.catalogExtrapolated && catalogExtrapDuty.catalogExtrap.above, "duty beyond entered catalog flow range should be returned as a calculation flag");
+const catalogRatedSelectedDuty = computeDuty({
+  ...baseState,
+  design: { flowMargin: 40, headMargin: 0 },
+  op: { Q: 240 },
+  pump: {
+    ...referencePump,
+    useCatalog: true,
+    arrangement: "single",
+    nPumps: 1,
+    catalog: [
+      { q: 0, h: 40, eta: 0.40, npshr: 2.0 },
+      { q: 120, h: 32, eta: 0.78, npshr: 3.2 },
+      { q: 200, h: 17, eta: 0.60, npshr: 7.0 },
+    ],
+  },
+});
+assert(!catalogRatedSelectedDuty.catalogExtrapolated, "test fixture should keep solved duty inside entered catalog range");
+assert(catalogRatedSelectedDuty.catalogRatedExtrapolated && catalogRatedSelectedDuty.catalogRatedExtrap.above, "rated point beyond catalog range should be flagged independently");
+assert(catalogRatedSelectedDuty.catalogSelectedExtrapolated && catalogRatedSelectedDuty.catalogSelectedExtrap.above, "selected/VFD target beyond catalog range should be flagged independently");
 assertNear(PM.motorSelection(12).selected_kW, 15, 1e-12, "motor selection should choose next IEC kW size");
 assertNear(PM.motorSelection(12).selected_hp, 20, 1e-12, "motor selection should choose next NEMA hp size");
 assertNear(PM.motorSelection(0).selected_kW, 0, 1e-12, "zero-duty motor selection should stay zero");
@@ -197,6 +239,11 @@ assert(!strictNpshDuty.cavOk, "configurable absolute NPSH margin should affect c
 
 const tooHighVfd = PM.speedForDutyResult(referencePump, 300, 200);
 assert(tooHighVfd.status === "above-max", "unreachable high-head VFD target should report above max speed");
+const minVfdResult = PM.minVfdSpeedResult(referencePump, staticPressureSystem);
+assert(minVfdResult.status === "solved", "minimum VFD static-speed result should carry solved status");
+assertNear(PM.minVfdSpeed(referencePump, staticPressureSystem), minVfdResult.speed, 1e-12, "minimum VFD numeric wrapper should match rich result speed");
+const highStaticMinVfd = PM.minVfdSpeedResult(referencePump, { ...staticPressureSystem, Zd: 1000 });
+assert(highStaticMinVfd.status === "above-max", "minimum VFD should report when static head cannot be reached within max speed");
 const estimatedFluidDuty = computeDuty({ ...baseState, fluid: { key: "Ethylene glycol", tempC: 20 } });
 assert(estimatedFluidDuty.fluidPropsEstimated, "non-water preset fluid properties should be flagged as estimated");
 

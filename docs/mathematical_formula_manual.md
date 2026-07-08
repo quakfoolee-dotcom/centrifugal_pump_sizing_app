@@ -546,19 +546,40 @@ y(x) = y_a + \frac{x-x_a}{x_b-x_a}(y_b-y_a)
 
 ### High-Flow Extrapolation
 
-For head, efficiency, and NPSHr above the last point, the app uses the last
-segment slope and then clamps to the allowed minimum.
+For head and NPSHr above the last point, the app uses the last segment slope
+and then clamps to the allowed minimum.
 
 ```math
 y(x) = y_b + \frac{y_b-y_a}{x_b-x_a}(x-x_b)
 ```
 
+Efficiency uses the same expression only when the terminal efficiency segment
+is flat or falling. If the final entered efficiency segment rises, the app holds
+efficiency at the last entered point instead of extrapolating an optimistic
+increase:
+
+```math
+\eta(x>x_b) =
+\begin{cases}
+\eta_b + \frac{\eta_b-\eta_a}{x_b-x_a}(x-x_b), & \eta_b < \eta_a \\
+\eta_b, & \eta_b \ge \eta_a
+\end{cases}
+```
+
+### Auxiliary Catalog Curve Completeness
+
+A head catalog is considered usable when at least two valid head points are
+entered and at least one point is at positive flow. Efficiency and NPSHr are
+tracked separately. If fewer than two valid efficiency or NPSHr points are
+entered, those auxiliary curves fall back to the screening parametric model and
+the app flags them as estimated.
+
 **Engineering Explanation**
 
 This avoids polynomial curve artifacts from sparse catalog data. Real pump
 curves should still be entered from vendor data wherever possible. If the solved
-duty point falls below or above the entered catalog flow range, the app flags
-that catalog extrapolation is being used.
+duty point, rated point, or selected VFD target falls below or above the entered
+catalog flow range, the app flags that catalog extrapolation is being used.
 
 **Example**
 
@@ -1044,7 +1065,8 @@ Q_{BEP,single}, & \text{single or series}
 **Engineering Explanation**
 
 Parallel pumps split flow equally. Series pumps add head. The app assumes
-identical pumps and ideal distribution/losses.
+identical pumps, equal flow division in parallel service, and ideal head
+addition with no interstage losses in series service.
 
 **Example**
 
@@ -1149,7 +1171,11 @@ G(N)=H_{combined}(0.5,N)-H_{target}
 **Engineering Explanation**
 
 This is a screening lower limit for maintaining enough head to overcome static
-and vessel pressure requirements.
+and vessel pressure requirements. The app solves this with the same VFD
+root-finder used for selected duty targets and carries the solve status. If the
+static target is below the minimum search speed, above the maximum search speed,
+or invalid, the calculator reports that status instead of presenting the value
+as an ordinary solved speed.
 
 **Example**
 

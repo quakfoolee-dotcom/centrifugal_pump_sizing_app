@@ -14,10 +14,14 @@ const Report = ({ state }) => {
     Ns, Nss, hfSuction: hfS, hfDischarge: hfD,
     staticLift, presHead, TDH, Re_s, flowRegimeS, transitionalFlow,
     design, ratedQ, ratedHsys: ratedH, ratedLeftOfBEP,
-    speedForDutyStatus, speedForDutyClamped, speedTargetAffinityOk,
+    speedForDutyStatus, speedForDutyClamped, speedTargetAffinityOk, minVfdClamped, minVfdInvalid,
     en,
     visc, viscActive, viscHighRisk, viscModelScreening, curveEstimated,
-    catalogHeadFlattened, catalogExtrap, catalogExtrapolated, fluidPropsEstimated,
+    catalogEtaEstimated, catalogNpshrEstimated,
+    catalogHeadFlattened, catalogExtrap, catalogExtrapolated,
+    catalogRatedExtrap, catalogRatedExtrapolated,
+    catalogSelectedExtrap, catalogSelectedExtrapolated,
+    fluidPropsEstimated,
     npshRatio, npshMarginAbs, margin, ratioActual, cavOk,
     bepPct, qMin, belowMinFlow, highSuctionEnergy, inPOR,
     hasGenericReducer, minorLossesApprox,
@@ -44,9 +48,15 @@ const Report = ({ state }) => {
   const statusNotes = [
     speedForDutyClamped && "VFD target speed is outside 150-6000 rpm",
     !speedTargetAffinityOk && speedForDutyStatus === "solved" && "VFD target speed is outside affinity range",
+    minVfdClamped && "Minimum static VFD speed is outside 150-6000 rpm",
+    minVfdInvalid && "Minimum static VFD speed could not be solved",
     affinityOutOfBounds && `Affinity limits exceeded: ${affinity.messages.join(", ")}`,
     curveEstimated && "Pump curve is estimated from BEP data",
     catalogExtrapolated && `Duty point is ${catalogExtrap.above ? "above" : "below"} the entered catalog flow range`,
+    catalogRatedExtrapolated && `Rated point is ${catalogRatedExtrap.above ? "above" : "below"} the entered catalog flow range`,
+    catalogSelectedExtrapolated && `Selected/VFD target is ${catalogSelectedExtrap.above ? "above" : "below"} the entered catalog flow range`,
+    catalogEtaEstimated && "Catalog efficiency curve is estimated; enter at least two eta points",
+    catalogNpshrEstimated && "Catalog NPSHr curve is estimated; enter at least two NPSHr points",
     catalogHeadFlattened && "Entered catalog head data was flattened to enforce a non-increasing curve",
     fluidPropsEstimated && "Non-water preset properties are estimated",
     transitionalFlow && "Suction Reynolds number is transitional",
@@ -188,7 +198,8 @@ const Report = ({ state }) => {
         <div className="section-head">Notes &amp; assumptions</div>
         <ol style={{fontSize:11, color:"var(--ink-2)", lineHeight:1.6, paddingLeft:18, margin:0}}>
           <li>Friction losses per Darcy–Weisbach with Churchill friction factor; minor losses from generic fitting count × K-values.</li>
-          <li>Pump H(Q) from {curveEstimated ? "parametric estimate (shutoff = 1.25 × H_BEP)" : "monotone interpolation through entered catalog points"}; catalog extrapolation and flattened rising head entries are flagged; affinity laws are bounded to the recommended speed and impeller ranges shown in the calculator.</li>
+          <li>Pump H(Q) from {curveEstimated ? "parametric estimate (shutoff = 1.25 × H_BEP)" : "monotone interpolation through entered catalog points"}; catalog extrapolation, estimated auxiliary catalog curves, and flattened rising head entries are flagged; affinity laws are bounded to the recommended speed and impeller ranges shown in the calculator.</li>
+          {arrange !== "single" && <li>Pump arrangement is idealized: parallel service assumes identical pumps with equal flow split; series service assumes ideal head addition with no interstage losses.</li>}
           <li>NPSHa = (Patm + suction vessel P)/ρg + Zs − Pv/ρg − h_f,suction. Acceptance: NPSHa/NPSHr ≥ {npshRatio.toFixed(2)} and absolute margin ≥ {U.fmt("head", npshMarginAbs, 2)} {uh}.</li>
           <li>Fluid properties {fluid.key === "Custom" ? "entered manually" : `derived at ${(fluid.tempC != null ? fluid.tempC : 20).toFixed(0)} °C`}. Viscous correction is a flow/Ns-aware screening model with conservative NPSHr multiplier; μ &gt; ~300 cP requires vendor curves.</li>
           <li>Rated point = duty +{design.flowMargin}% flow / +{design.headMargin}% head; pump selected with rated flow left of BEP. Motor selection uses 15 % service margin, next IEC/NEMA catalog size, and a size-based efficiency curve.</li>
