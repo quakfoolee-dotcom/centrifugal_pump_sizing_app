@@ -25,6 +25,65 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.20 - Formula Verifier Reference Document
+
+**Objective**
+
+Create a readable engineering reference document for the first-principles
+formula verifier so reviewers can understand the equation basis behind each
+scripted check.
+
+**Before Fix**
+
+- `scripts/verify-formulas.mjs` existed and passed 82 first-principles checks,
+  but the check basis lived only in source code.
+- Reviewers had to read JavaScript to understand the exact constants,
+  equations, tolerances, and sample values behind the verifier.
+- README did not point to a dedicated verifier reference document.
+
+**After Fix**
+
+- Added `docs/verify_formulas_reference.md`.
+- Documented the verifier's 12 check groups with LaTeX-style equations,
+  constants, sample calculations, tolerance logic, and QC traceability.
+- Used compact unit notation consistent with the main mathematical formula
+  manual.
+- Added the reference document to the README project structure.
+- Bumped the shared app version to `0.10.20` and regenerated the standalone
+  artifact so release labeling remains aligned.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `Pump_Calculator_standalone.html`
+- `README.md`
+- `docs/engineering_change_record.md`
+- `docs/verify_formulas_reference.md`
+- `lib/caseLibrary.js`
+- `scripts/browser-smoke-test.mjs`
+- `scripts/smoke-test.mjs`
+
+**QC Results**
+
+- `git diff --check` passed.
+- `npm run verify:formulas` passed.
+- `npm run test` passed.
+- `npm run build:standalone` passed.
+- `npm run test:browser` passed.
+
+**Remaining Risk**
+
+The new document explains the verifier basis, but the verifier remains a
+regression and first-principles consistency check. It still does not replace
+certified vendor pump curves, HI viscosity-chart calibration, project
+specifications, visual chart review, or browser print-preview validation.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.19 - First-Principles Formula Verification Script
 
 **Objective**

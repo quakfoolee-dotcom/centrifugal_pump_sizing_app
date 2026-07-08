@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.20] - 2026-07-08
+
+- Added `docs/verify_formulas_reference.md`, a LaTeX-style reference document for the 82 checks in `scripts/verify-formulas.mjs`.
+- Documented formula-verifier equations, constants, sample calculations, tolerance logic, and QC traceability by script section.
+- Linked the verifier reference from the README project structure and bumped the shared app version to `0.10.20`.
+
 ## [0.10.19] - 2026-07-08
 
 - Added `scripts/verify-formulas.mjs`, an 82-check first-principles formula verification script.

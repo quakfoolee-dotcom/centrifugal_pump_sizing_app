@@ -65,6 +65,7 @@ scripts/smoke-test.mjs             No-dependency calculation smoke test
 scripts/verify-formulas.mjs        First-principles formula verification
 scripts/browser-smoke-test.mjs     Headless Chrome/Edge workflow smoke test
 scripts/build-standalone.mjs       Regenerates the offline standalone file
+docs/verify_formulas_reference.md  LaTeX-style verifier formula reference
 ```
 
 React + Babel load from CDN at runtime, so the `.jsx` files are transpiled in the browser. The Node scripts are only for smoke testing and refreshing the standalone offline artifact.
