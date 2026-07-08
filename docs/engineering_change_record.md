@@ -26,6 +26,55 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.7 - Mathematical Formula Manual and Local Tooling Ignore
+
+**Objective**
+
+Add a comprehensive engineering math manual for the app's calculation basis and
+prevent machine-local assistant/tooling settings from being published to GitHub.
+
+**Before Fix**
+
+- Mathematical formulas were implemented in code and partially described in
+  QC notes, but there was no single manual covering equations, engineering
+  meaning, and worked examples.
+- The local `.claude/` assistant tooling directory was untracked but not
+  explicitly ignored.
+
+**After Fix**
+
+- Added `docs/mathematical_formula_manual.md` with LaTeX-style equations,
+  engineering explanations, and sample calculations for the app's hydraulic,
+  pump, NPSH, viscosity, VFD, motor, and energy calculations.
+- Added `.claude/` to `.gitignore` so machine-specific local settings stay out
+  of repository commits.
+- Added `0.10.7` changelog notes for the documentation and ignore-file update.
+
+**Files Changed**
+
+- `.gitignore`
+- `CHANGELOG.md`
+- `docs/mathematical_formula_manual.md`
+
+**QC Results**
+
+- `git diff --check` passed with line-ending warnings only.
+- Manual review confirmed the document contains no TODO/FIXME placeholders.
+- Manual review confirmed the document uses ASCII text and LaTeX-style math
+  blocks.
+
+**Remaining Risk**
+
+The manual documents the current screening calculation basis. Vendor-certified
+curves, applicable HI standards, and project specifications remain controlling
+references for final pump selection.
+
+**Release / Commit**
+
+- Commit: `bf8a9bb`
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.6 - Affinity, Viscous NPSH, NPSH Margin, and Motor Efficiency Controls
 
 **Objective**
