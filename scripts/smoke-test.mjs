@@ -76,8 +76,12 @@ assertNear(US.conv("specE", 1), 3.785412, 1e-6, "kWh/m3 to kWh/kgal conversion")
 const velocity = PM.velocity(36, 100);
 assertNear(velocity, 1.2732395447, 1e-9, "pipe velocity");
 assertNear(PM.reynolds(velocity, 100, 1000, 1), 127323.95447, 1e-4, "Reynolds number");
-assertNear(PM.frictionFactor(1000, 0.046, 100), 0.064, 1e-12, "laminar friction factor");
-assertNear(PM.frictionFactor(0.5, 0.046, 100), 128, 1e-12, "creeping-flow laminar friction factor");
+assertNear(PM.frictionFactor(1000, 0.046, 100), 0.064, 1e-4, "laminar friction factor");
+assertNear(PM.frictionFactor(0.5, 0.046, 100), 128, 1e-4, "creeping-flow laminar friction factor");
+assert(PM.frictionFactor(3000, 0.046, 100) > 0, "transitional friction factor should be finite and positive");
+assert(PM.flowRegime(1000) === "laminar", "Re 1000 should be laminar");
+assert(PM.flowRegime(3000) === "transitional", "Re 3000 should be transitional");
+assert(PM.flowRegime(5000) === "turbulent", "Re 5000 should be turbulent");
 assertNear(PM.hydraulicPower(36, 10, 1000), 0.980665, 1e-6, "hydraulic power");
 assertNear(PM.brakePower(36, 10, 1000, 0.7), 1.40095, 1e-5, "brake power");
 
@@ -122,13 +126,47 @@ const catalogPump = {
 };
 assertNear(PM.pumpH(0, catalogPump), 40, 1e-9, "catalog shutoff point participates in head fit");
 assert(Number.isFinite(PM.pumpH(0, { ...referencePump, useCatalog: true, catalog: [{ q: 0, h: 40 }, { q: 0, h: 41 }] })), "insufficient catalog data should fall back safely");
+const nonMonotoneCatalogPump = {
+  ...referencePump,
+  useCatalog: true,
+  catalog: [
+    { q: 0, h: 40, eta: 0 },
+    { q: 100, h: 30, eta: 0.75 },
+    { q: 200, h: 35, eta: 0.65 },
+  ],
+};
+assert(PM.hasCatalogCurve(nonMonotoneCatalogPump), "valid catalog curve should be recognized");
+assert(PM.pumpH(200, nonMonotoneCatalogPump) <= PM.pumpH(100, nonMonotoneCatalogPump), "catalog head should be forced non-increasing with flow");
+assert(PM.pumpH(400, nonMonotoneCatalogPump) <= PM.pumpH(200, nonMonotoneCatalogPump), "catalog high-flow extrapolation should not rise");
+assertNear(PM.motorSelection(12).selected_kW, 15, 1e-12, "motor selection should choose next IEC kW size");
+assertNear(PM.motorSelection(12).selected_hp, 20, 1e-12, "motor selection should choose next NEMA hp size");
+assertNear(PM.motorSelection(0).selected_kW, 0, 1e-12, "zero-duty motor selection should stay zero");
 
 const duty = computeDuty(baseState);
 assert(duty.dutyQ > 0, "default duty flow should solve");
+assert(duty.hasDutyPoint && !duty.noDutyPoint, "default case should report a valid duty point");
 assert(duty.Qmax > duty.dutyQ, "plot range should cover the duty point");
 assertNear(duty.opH, duty.TDH, 0.05, "default pump head should match system TDH at duty");
 assert(Number.isFinite(duty.Pbrake) && duty.Pbrake > 0, "brake power should be finite and positive");
 assert(Number.isFinite(duty.Ns) && duty.Ns > 0, "specific speed should be finite and positive");
+assert(Math.abs(PM.combinedH(duty.selectedQ, duty.effPump) - duty.selectedHsys) > 0.5, "selected target flow should differ from current pump curve for VFD test fixture");
+assert(duty.speedForDutyStatus === "solved", "default VFD target should solve within speed bounds");
+assertNear(PM.combinedH(duty.selectedQ, { ...duty.effPump, N: duty.speedForDuty }), duty.selectedHsys, 0.05, "VFD speed should solve at selected target flow");
+assert(duty.curveEstimated, "parametric pump curve should be flagged as estimated");
+assert(duty.minorLossesApprox, "default fitting K-values should be flagged as approximate");
+assert(duty.motor.selected_kW >= duty.PbrakePer * 1.15, "selected IEC motor should cover per-pump brake power plus margin");
+
+const tooHighVfd = PM.speedForDutyResult(referencePump, 300, 200);
+assert(tooHighVfd.status === "above-max", "unreachable high-head VFD target should report above max speed");
+const estimatedFluidDuty = computeDuty({ ...baseState, fluid: { key: "Ethylene glycol", tempC: 20 } });
+assert(estimatedFluidDuty.fluidPropsEstimated, "non-water preset fluid properties should be flagged as estimated");
+
+const noDuty = computeDuty({ ...baseState, pump: { ...baseState.pump, N: 600 } });
+assert(noDuty.noDutyPoint && !noDuty.hasDutyPoint, "underspeed pump should report no positive-flow duty point");
+assertNear(noDuty.dutyQ, 0, 1e-12, "no-duty case should not fall back to arbitrary selected flow");
+assert(noDuty.opH < noDuty.TDH, "no-duty case should expose pump head below system head at zero flow");
+assertNear(noDuty.Pbrake, 0, 1e-12, "no-duty case should not calculate positive brake power");
+assertNear(noDuty.motor.selected_kW, 0, 1e-12, "no-duty case should not select a motor");
 
 const parallelState = {
   ...baseState,

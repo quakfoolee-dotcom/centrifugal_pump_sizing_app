@@ -7,8 +7,18 @@ window.pumpMetrics = function (state) {
   const fluidName = fluid.key === "Custom" ? (fluid.customName || "Custom") : fluid.key;
   return {
     Q: duty.dutyQ, H: duty.opH, eta: duty.opEta, Pbrake: duty.Pbrake, Pmotor: duty.Pmotor,
+    motorKW: duty.motor.selected_kW, motorHP: duty.motor.selected_hp,
     opNPSHa: duty.opNPSHa, opNPSHr: duty.opNPSHr, margin: duty.margin, ratio: duty.ratioActual,
-    cavOk: duty.cavOk, bepPct: duty.bepPct, TDH: duty.TDH, Nss: duty.Nss, Ns: duty.Ns,
+    cavOk: duty.cavOk, noDutyPoint: duty.noDutyPoint, bepPct: duty.bepPct, TDH: duty.TDH, Nss: duty.Nss, Ns: duty.Ns,
+    flowRegime: duty.flowRegimeS,
+    flags: [
+      duty.speedForDutyClamped && "VFD",
+      duty.curveEstimated && "curve est.",
+      duty.fluidPropsEstimated && "fluid est.",
+      duty.transitionalFlow && "Re trans.",
+      duty.minorLossesApprox && "K generic",
+      duty.viscHighRisk && "viscous",
+    ].filter(Boolean).join(", ") || "none",
     N: pump.N, D: pump.D, arrange: duty.arrange, nSet: duty.nSet,
     kWh: duty.en.kWhPerYear, cost: duty.en.costPerYear, spec: duty.en.specific_kWh_m3,
     fluidName, npshRatio: duty.npshRatio, Qmax: duty.Qmax,
@@ -45,6 +55,7 @@ const Compare = ({ liveState, cases, unitSystem }) => {
   // dir: +1 higher is better, -1 lower is better, 0 neutral
   const rows = [
     { k: "Arrangement", get: m => m.arrange === "single" ? "single" : `${m.nSet}× ${m.arrange}`, txt: true },
+    { k: "Duty point", get: m => m.noDutyPoint ? "no intersection" : "solved", txt: true },
     { k: "Fluid", get: m => m.fluidName, txt: true },
     { k: `Duty flow`, q: "flow", get: m => m.Q, n: 1 },
     { k: `Duty head`, q: "head", get: m => m.H, n: 2 },
@@ -53,9 +64,14 @@ const Compare = ({ liveState, cases, unitSystem }) => {
     { k: `Duty / BEP`, get: m => m.bepPct, unit: "%", n: 0, dir: 0, near100: true },
     { k: `Shaft power`, q: "power", get: m => m.Pbrake, n: 2, dir: -1 },
     { k: `Motor input`, q: "power", get: m => m.Pmotor, n: 2, dir: -1 },
+    { k: `Motor select · ea.`, get: m => U.US
+      ? (m.motorHP > 0 ? `${m.motorHP.toFixed(m.motorHP < 10 ? 1 : 0)} hp` : "n/a")
+      : (m.motorKW > 0 ? `${m.motorKW.toFixed(m.motorKW < 10 ? 2 : 1)} kW` : "n/a"), txt: true },
     { k: `NPSH margin`, q: "head", get: m => m.margin, n: 2, dir: 1 },
     { k: `NPSHa / NPSHr`, get: m => m.ratio, unit: "×", n: 2, dir: 1 },
     { k: `Suction sp. speed`, get: m => m.Nss, unit: "—", n: 0, dir: -1 },
+    { k: `Suction regime`, get: m => m.flowRegime, txt: true },
+    { k: `Calc flags`, get: m => m.flags, txt: true },
     { k: `Speed N`, get: m => m.N, unit: "rpm", n: 0 },
     { k: `Impeller D`, q: "dia", get: m => m.D, n: U.US ? 2 : 0 },
     { k: `Annual energy`, get: m => m.kWh / 1000, unit: "MWh", n: 1, dir: -1 },
@@ -164,8 +180,8 @@ const Compare = ({ liveState, cases, unitSystem }) => {
             <tr>
               <td>Cavitation</td>
               {metrics.map((m, i) => (
-                <td key={i} className="v" style={{textAlign:"right", color: m.cavOk ? "var(--ok)" : "var(--bad)"}}>
-                  {m.cavOk ? "OK" : "REVIEW"}
+                <td key={i} className="v" style={{textAlign:"right", color: !m.noDutyPoint && m.cavOk ? "var(--ok)" : "var(--bad)"}}>
+                  {m.noDutyPoint ? "NO DUTY" : m.cavOk ? "OK" : "REVIEW"}
                 </td>
               ))}
               {metrics.length >= 2 && <td></td>}

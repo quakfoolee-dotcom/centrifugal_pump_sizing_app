@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.10.5] - 2026-07-08
+
+- Replaced catalog pump curve polynomial fitting with monotone interpolation through entered catalog points.
+- Added explicit VFD out-of-range status for target speed calculations.
+- Switched pipe friction to the Churchill correlation and surfaced transitional-flow status.
+- Added engineering flags for estimated pump curves, estimated non-water fluid properties, generic fitting K-values, and high-viscosity screening limits.
+- Changed motor sizing to select the next IEC/NEMA catalog motor size after service margin.
+- Updated calculator, report, compare, and smoke tests for the QC findings.
+
+## [0.10.4] - 2026-07-08
+
+- Fixed VFD duty-speed calculation to solve against the selected target flow instead of the already-solved pump/system intersection.
+- Added explicit no-duty-point handling when pump and system curves do not intersect at positive flow.
+- Surfaced pump/system mismatch status in the calculator, report, and case comparison views.
+
 ## [0.10.3] - 2026-07-08
 
 - Corrected catalog-curve fitting so valid zero-flow shutoff head points are included in the pump head model.

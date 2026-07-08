@@ -501,6 +501,10 @@ table.cmp tbody tr:hover { background: var(--paper-2); }
 }
 .btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .btn:hover { background: var(--paper-2); }
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .btn.primary:hover { background: #000; }
 
 /* Warning pill inline */

@@ -108,19 +108,28 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
   const duty = window.computeDuty(state);
   const {
     fitS, fitD, sumKs, sumKd, sysEff, effPump, nSet, arrange,
-    dutyQ, dutyPoint, Qmax,
+    dutyQ, dutyPoint, noDutyPoint, Qmax,
     opH, opEta, opNPSHr, opNPSHa, perQ, perH,
-    Phyd, PbrakePer, Pbrake, Pmotor,
+    Phyd, PbrakePer, Pbrake, Pmotor, motor,
     Ns, Nss, vSuction, vDischarge, hfSuction, hfDischarge,
-    staticLift, presHead, TDH, Re_s,
+    staticLift, presHead, TDH, Re_s, flowRegimeS, transitionalFlow,
+    hasGenericReducer, minorLossesApprox,
     design, ratedQ, ratedHsys, ratedLeftOfBEP,
-    speedForDuty, minVfd,
+    speedForDuty, speedForDutyStatus, speedForDutyClamped, minVfd,
     econ, en,
-    visc, viscActive,
+    visc, viscActive, viscHighRisk, curveEstimated, fluidPropsEstimated,
     npshRatio, margin, ratioActual, cavOk,
     bepQ, bepPct, qMin, belowMinFlow, highSuctionEnergy, inPOR,
     sN, sD,
   } = duty;
+  const speedLabel =
+    speedForDutyStatus === "above-max" ? `>${speedForDuty.toFixed(0)}` :
+    speedForDutyStatus === "below-min" ? `<${speedForDuty.toFixed(0)}` :
+    Number.isFinite(speedForDuty) ? speedForDuty.toFixed(0) : "n/a";
+  const canSetSpeed = !noDutyPoint && speedForDutyStatus === "solved" && Number.isFinite(speedForDuty);
+  const motorSelectText = U.US
+    ? (motor.selected_hp > 0 ? motor.selected_hp.toFixed(motor.selected_hp < 10 ? 1 : 0) : "n/a")
+    : (motor.selected_kW > 0 ? motor.selected_kW.toFixed(motor.selected_kW < 10 ? 2 : 1) : "n/a");
 
   // Catalog-point editor helpers
   const catalog = Array.isArray(pump.catalog) ? pump.catalog : [];
@@ -345,11 +354,11 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
               </label>
             </span>
           </div>
-          <div className="kv"><span className="k">Speed for this duty</span><span className="v">{speedForDuty.toFixed(0)}</span><span className="u">rpm</span></div>
+          <div className="kv"><span className="k">Speed for selected Q</span><span className="v">{speedLabel}</span><span className="u">rpm</span></div>
           <div className="kv"><span className="k">Min speed (static)</span><span className="v">{minVfd.toFixed(0)}</span><span className="u">rpm</span></div>
           <div style={{padding:"6px var(--pad) 10px"}}>
-            <button className="btn" style={{width:"100%"}}
-                    onClick={() => set("pump")({ N: Math.round(speedForDuty) })}>↳ Set speed to hold duty</button>
+            <button className="btn" style={{width:"100%"}} disabled={!canSetSpeed}
+                    onClick={() => canSetSpeed && set("pump")({ N: Math.round(speedForDuty) })}>↳ Set speed to hold selection</button>
           </div>
         </div>
 
@@ -424,13 +433,22 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           <div className="res-cell"><span className="k">NPSH mgn</span><span className="v" style={{color: cavOk ? "var(--ok)" : "var(--bad)"}}>{U.fmt("head", margin, 2)}</span><span className="u">{U.unit("head")}</span></div>
         </div>
 
-        {(belowMinFlow || !cavOk || highSuctionEnergy || !inPOR || viscActive) && (
+        {(noDutyPoint || speedForDutyClamped || belowMinFlow || !cavOk || highSuctionEnergy || !inPOR ||
+          !ratedLeftOfBEP || viscActive || viscHighRisk || curveEstimated || fluidPropsEstimated ||
+          transitionalFlow || minorLossesApprox) && (
           <div style={{display:"flex", flexWrap:"wrap", gap:8, padding:"8px var(--pad)", borderTop:"var(--hair)"}}>
+            {noDutyPoint && <span className="pill bad">◆ No achievable duty point — pump/system mismatch</span>}
+            {speedForDutyClamped && <span className="pill warn">▲ VFD target outside 150-6000 rpm</span>}
             {belowMinFlow && <span className="pill bad">◆ Below min flow — recirculation / overheating</span>}
-            {!cavOk && <span className="pill bad">◆ NPSH ratio {ratioActual.toFixed(2)} &lt; {npshRatio.toFixed(2)} req.</span>}
+            {!noDutyPoint && !cavOk && <span className="pill bad">◆ NPSH ratio {ratioActual.toFixed(2)} &lt; {npshRatio.toFixed(2)} req.</span>}
             {highSuctionEnergy && <span className="pill warn">▲ High suction energy · Nss {Nss.toFixed(0)}</span>}
-            {!inPOR && !belowMinFlow && <span className="pill warn">▲ Outside preferred region ({bepPct.toFixed(0)}% BEP)</span>}
-            {viscActive && <span className="pill">● Viscous correction active · μ {sys.mu.toFixed(1)} cP</span>}
+            {!noDutyPoint && !inPOR && !belowMinFlow && <span className="pill warn">▲ Outside preferred region ({bepPct.toFixed(0)}% BEP)</span>}
+            {curveEstimated && <span className="pill warn">▲ Estimated pump curve — add vendor catalog points</span>}
+            {fluidPropsEstimated && <span className="pill warn">▲ Preset fluid properties are estimated</span>}
+            {transitionalFlow && <span className="pill warn">▲ Transitional suction Reynolds number</span>}
+            {minorLossesApprox && <span className="pill warn">▲ {hasGenericReducer ? "Reducer K-value is generic" : "Fitting K-values are generic"}</span>}
+            {viscActive && <span className="pill">● Approx viscous correction active · μ {sys.mu.toFixed(1)} cP</span>}
+            {viscHighRisk && <span className="pill warn">▲ Vendor viscous curve required</span>}
             {!ratedLeftOfBEP && <span className="pill warn">▲ Rated flow right of BEP — select larger pump</span>}
           </div>
         )}
@@ -443,12 +461,21 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           <span className="badge">live</span>
         </div>
 
-        <div className={"callout " + (cavOk ? "ok" : "bad")}>
+        {noDutyPoint && (
+          <div className="callout bad">
+            <div className="title"><span>No achievable duty point</span><span className="mono">H_pump &lt; H_sys</span></div>
+            <div className="sub">
+              Pump and system curves do not intersect at positive flow. Increase speed/impeller, use a larger pump, or reduce system head.
+            </div>
+          </div>
+        )}
+
+        <div className={"callout " + (!noDutyPoint && cavOk ? "ok" : "bad")}>
           <div className="title"><span>Cavitation check</span><span className="mono">NPSHa / NPSHr</span></div>
           <div className="big">{ratioActual > 90 ? "—" : ratioActual.toFixed(2)}<span style={{fontSize:12, color:"var(--mute)"}}> ×  (req ≥ {npshRatio.toFixed(2)})</span></div>
           <div className="sub">
             NPSHa {U.fmt("head", opNPSHa, 2)} − NPSHr {U.fmt("head", opNPSHr, 2)} = margin {U.fmt("head", margin, 2)} {U.unit("head")} ·{" "}
-            {cavOk ? "OK" : "cavitation risk — increase NPSHa or derate"}
+            {noDutyPoint ? "not evaluated — no positive-flow duty point" : cavOk ? "OK" : "cavitation risk — increase NPSHa or derate"}
           </div>
         </div>
 
@@ -476,7 +503,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           {arrange !== "single" && <KV k="Shaft · per pump" v={U.fmt("power", PbrakePer, 2)} u={U.unit("power")} />}
           <KV k={arrange === "single" ? "Shaft (BHP)" : "Shaft · total"} v={U.fmt("power", Pbrake, 2)}  u={U.unit("power")} />
           <KV k="Motor input (η=0.93)" v={U.fmt("power", Pmotor, 2)} u={U.unit("power")} />
-          <KV k="Motor select · ea."   v={`≥ ${U.conv("power", Math.ceil(PbrakePer * 1.15 * 10)/10).toFixed(1)}`} u={U.unit("power")} />
+          <KV k="Motor select · ea."   v={`≥ ${motorSelectText}`} u={U.US ? "hp" : "kW"} />
         </div>
 
         <div className="section">
@@ -484,6 +511,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           <KV k="v · suction"      v={U.fmt("vel", vSuction, 2)}   u={U.unit("vel")} />
           <KV k="v · discharge"    v={U.fmt("vel", vDischarge, 2)} u={U.unit("vel")} />
           <KV k="Reynolds · suc."  v={Re_s.toExponential(1)} u="—" />
+          <KV k="Regime · suction" v={flowRegimeS} u="" />
         </div>
 
         <div className="section">
@@ -510,7 +538,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         </div>
 
         <div style={{padding:"10px var(--pad) 16px", color:"var(--mute)", fontSize:11, lineHeight:1.5}}>
-          Model: Darcy–Weisbach + Swamee–Jain · {pump.useCatalog ? "least-squares fit through catalog points" : "parametric parabola"} · affinity Q∝ND, H∝(ND)² · HI 9.6.7 viscosity factors applied to the live curve · NPSH ratio per HI 9.6.1 · min flow &amp; Nss stability limits · Ns = N·√Q/H<sup>0.75</sup>.
+          Model: Darcy–Weisbach + Churchill friction · {curveEstimated ? "estimated parametric pump curve" : "monotone interpolation through catalog points"} · affinity Q∝ND, H∝(ND)² · screening-level viscous correction · generic fitting K library · NPSH ratio per HI 9.6.1 · min flow &amp; Nss stability limits · Ns = N·√Q/H<sup>0.75</sup>.
         </div>
       </div>
     </div>
