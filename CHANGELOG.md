@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.10.10] - 2026-07-08
+
+- Tightened slash-unit rendering in the mathematical formula manual with LaTeX negative thin spaces, so units such as `m^3/h`, `m^3/s`, and `m/s` do not render as spaced operators.
+- Changed the internal-units table to plain Markdown/HTML unit labels so simple units render without math-mode slash spacing.
+
 ## [0.10.9] - 2026-07-08
 
 - Normalized engineering unit notation in the mathematical formula manual to use upright `\mathrm{...}` units, preventing rendered units such as `m/s` from appearing with spaced slashes.

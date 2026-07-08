@@ -26,6 +26,57 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.10 - Compact Slash Unit Rendering
+
+**Objective**
+
+Fix remaining visual spacing around slash-style engineering units in the
+mathematical formula manual, especially in the internal-units table.
+
+**Before Fix**
+
+- Units were wrapped in `\mathrm{...}`, for example `\mathrm{m^3/h}`.
+- GitHub's math renderer could still treat `/` as an operator and display
+  units like `m^3 / h` and `m / s`.
+
+**After Fix**
+
+- Replaced slash units with explicit compact LaTeX forms such as
+  `\mathrm{m^3}\!/\!\mathrm{h}`, `\mathrm{m^3}\!/\!\mathrm{s}`, and
+  `\mathrm{m}\!/\!\mathrm{s}`.
+- Applied the same compact slash style to density, energy, cost, and time-rate
+  units in the formula manual.
+- Changed the internal-units table unit labels to plain Markdown/HTML text
+  such as `m<sup>3</sup>/h` and `m/s` so table cells do not rely on math
+  rendering for simple unit labels.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `docs/engineering_change_record.md`
+- `docs/mathematical_formula_manual.md`
+
+**QC Results**
+
+- Spot-checked the internal-units table and velocity example for compact slash
+  unit notation.
+- `rg "\mathrm\{[^}]+/[^}]+\}" docs\mathematical_formula_manual.md` found no
+  remaining raw slash units inside a single `\mathrm{...}` block.
+- Spot-checked the internal-units table source for plain unit labels without
+  math-mode slash operators.
+- Inline `$...$` delimiters remain balanced outside fenced math blocks.
+
+**Remaining Risk**
+
+Markdown math rendering is viewer-dependent, but the negative thin-space form
+should prevent GitHub from displaying slash units with operator spacing.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.9 - Formula Manual Unit Rendering
 
 **Objective**
