@@ -78,7 +78,7 @@ const baseState = {
   op: { Q: 110 },
 };
 
-assert(PumpCases.APP_VERSION === "0.10.15", "app version helper should match this release");
+assert(PumpCases.APP_VERSION === "0.10.16", "app version helper should match this release");
 const editedState = {
   ...baseState,
   meta: { ...baseState.meta, tag: "LIVE-EDIT", docNo: "" },
@@ -114,6 +114,7 @@ const appHtml = readFileSync("Pump_Calculator.html", "utf8");
 assert(appHtml.includes("lib/caseLibrary.js"), "main app should load case library helper");
 assert(appHtml.includes("v{APP_VERSION}"), "topbar should use shared app version");
 assert(appHtml.includes("onClick={printReport}"), "print button should route through report print handler");
+assert(appHtml.includes("Print Report / PDF"), "print button label should make report-only output explicit");
 assert(!appHtml.includes("meta?.docNo || \"CAL-HYD-0142\""), "status bar should not fall back to demo doc number");
 const appCss = readFileSync("styles.css", "utf8");
 assert(appCss.includes("@media print"), "print stylesheet should be present");

@@ -25,6 +25,54 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.16 - Report Print Label Clarification
+
+**Objective**
+
+Make the global print control clearly communicate that it prints the engineering
+report sheet, even when the user is currently viewing Calculator or Compare.
+
+**Before Fix**
+
+- The topbar button was labeled `Print / PDF`.
+- After the 0.10.15 fix, the button correctly switched to Report preview before
+  printing, but the generic label could make users expect the active Compare tab
+  to print.
+
+**After Fix**
+
+- Renamed the control to `Print Report / PDF`.
+- Added a tooltip explaining that it switches to report preview and prints the
+  report sheet.
+- Bumped the shared app version to `0.10.16`.
+- Added smoke-test coverage for the explicit report-print label.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `Pump_Calculator.html`
+- `Pump_Calculator_standalone.html`
+- `docs/engineering_change_record.md`
+- `lib/caseLibrary.js`
+- `scripts/smoke-test.mjs`
+
+**QC Results**
+
+- `npm run test` passed.
+- `npm run build:standalone` passed.
+- `git diff --check` passed with line-ending warnings only.
+
+**Remaining Risk**
+
+The app still does not provide a dedicated Compare-tab printout. The global
+print control intentionally prints the formal engineering report.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.15 - Case Workflow Hardening And Report Print Control
 
 **Objective**

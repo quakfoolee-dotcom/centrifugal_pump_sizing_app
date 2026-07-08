@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.10.16] - 2026-07-08
+
+- Renamed the global print control to `Print Report / PDF` so it is clear that it intentionally prints the engineering report sheet from any active tab.
+- Added smoke-test coverage for the explicit report-print label.
+
 ## [0.10.15] - 2026-07-08
 
 - Made individual case export serialize the current live app state instead of an older saved-case snapshot.
