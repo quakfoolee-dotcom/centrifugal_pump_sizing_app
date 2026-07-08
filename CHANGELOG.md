@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.10.1] - 2026-07-08
+
+- Renamed app HTML files to underscore-based filenames so local and GitHub Pages URLs do not require `%20`.
+- Updated the GitHub Pages redirect, README local-run URL, and standalone build script for the new filenames.
+
 ## [0.10.0] - 2026-07-08
 
 - Fixed calculator, report, and compare outputs to use the solved pump/system duty point consistently.

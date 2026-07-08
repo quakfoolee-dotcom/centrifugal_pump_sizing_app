@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 
-const standalonePath = "Pump Calculator (standalone).html";
-const appPath = "Pump Calculator.html";
+const standalonePath = "Pump_Calculator_standalone.html";
+const appPath = "Pump_Calculator.html";
 
 if (!existsSync(standalonePath)) {
   throw new Error(`Missing ${standalonePath}; cannot preserve offline wrapper assets`);

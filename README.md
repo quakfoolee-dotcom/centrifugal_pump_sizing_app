@@ -1,6 +1,6 @@
 # Centrifugal Pump Sizing App
 
-Static, engineer-grade centrifugal pump sizing calculator built as a single-page browser app. Open `index.html` or `Pump Calculator.html` for the multi-file app, or `Pump Calculator (standalone).html` for the single self-contained offline file.
+Static, engineer-grade centrifugal pump sizing calculator built as a single-page browser app. Open `index.html` or `Pump_Calculator.html` for the multi-file app, or `Pump_Calculator_standalone.html` for the single self-contained offline file.
 
 ## What It Does
 
@@ -20,14 +20,14 @@ Static, engineer-grade centrifugal pump sizing calculator built as a single-page
 
 ## Run Locally
 
-Open `Pump Calculator.html` in a modern browser. For development, a static server avoids `file://` restrictions:
+Open `Pump_Calculator.html` in a modern browser. For development, a static server avoids `file://` restrictions:
 
 ```bash
 python3 -m http.server 8000
-# then open http://localhost:8000/Pump%20Calculator.html
+# then open http://localhost:8000/Pump_Calculator.html
 ```
 
-For a no-setup, offline copy, open `Pump Calculator (standalone).html` — everything is inlined into one file.
+For a no-setup, offline copy, open `Pump_Calculator_standalone.html` — everything is inlined into one file.
 
 Optional maintenance commands:
 
@@ -40,8 +40,8 @@ npm run build:standalone
 
 ```
 index.html                         Root redirect for GitHub Pages
-Pump Calculator.html               Main app (loads the modules below)
-Pump Calculator (standalone).html  Single self-contained build (offline)
+Pump_Calculator.html               Main app (loads the modules below)
+Pump_Calculator_standalone.html    Single self-contained build (offline)
 styles.css                         CAD / engineering styling
 lib/pumpMath.js                    Pump hydraulics engine (SI internally)
 lib/units.js                       SI <-> US display-layer conversion
