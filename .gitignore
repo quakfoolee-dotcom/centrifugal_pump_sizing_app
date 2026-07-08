@@ -1,0 +1,16 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Node (not required, but in case tooling is added later)
+node_modules/
+npm-debug.log*
+
+# Local build scratch
+screenshots/
