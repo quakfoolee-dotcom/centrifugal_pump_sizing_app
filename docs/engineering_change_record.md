@@ -26,6 +26,55 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.11 - Remove Visible Unit Spacing Commands
+
+**Objective**
+
+Remove visible exclamation marks from slash-unit notation in the mathematical
+formula manual while keeping compact units such as m^3/h and m/s.
+
+**Before Fix**
+
+- The 0.10.10 unit-rendering fix used LaTeX negative thin-space commands around
+  slash units.
+- The target Markdown renderer exposed those spacing commands visually, showing
+  visible exclamation marks around the slash.
+
+**After Fix**
+
+- Removed all negative thin-space commands from the formula manual.
+- Replaced math-mode slash units with renderer-safe text fragments, for example
+  `\text{m}^3\text{/h}`, `\text{m}^3\text{/s}`, `\text{kg/m}^3`, and
+  `\text{m/s}`.
+- Kept the internal-units table as plain Markdown/HTML unit labels.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `docs/engineering_change_record.md`
+- `docs/mathematical_formula_manual.md`
+
+**QC Results**
+
+- A scan of `docs/mathematical_formula_manual.md` found no remaining LaTeX
+  negative thin-space commands.
+- A scan of `docs/mathematical_formula_manual.md` found no visible
+  exclamation-mark slash-unit artifacts.
+- Spot-checked the flow conversion and velocity examples that previously showed
+  visible spacing artifacts.
+- Inline `$...$` delimiters remain balanced outside fenced math blocks.
+
+**Remaining Risk**
+
+Markdown math rendering is viewer-dependent, but `\text{...}` avoids relying on
+LaTeX spacing commands and should not display exclamation marks.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.10 - Compact Slash Unit Rendering
 
 **Objective**
@@ -42,8 +91,8 @@ mathematical formula manual, especially in the internal-units table.
 **After Fix**
 
 - Replaced slash units with explicit compact LaTeX forms such as
-  `\mathrm{m^3}\!/\!\mathrm{h}`, `\mathrm{m^3}\!/\!\mathrm{s}`, and
-  `\mathrm{m}\!/\!\mathrm{s}`.
+  `\text{m}^3\text{/h}`, `\text{m}^3\text{/s}`, and
+  `\text{m/s}`.
 - Applied the same compact slash style to density, energy, cost, and time-rate
   units in the formula manual.
 - Changed the internal-units table unit labels to plain Markdown/HTML text

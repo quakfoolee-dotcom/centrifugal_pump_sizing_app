@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.10.11] - 2026-07-08
+
+- Removed visible LaTeX spacing commands from slash-unit notation in the mathematical formula manual.
+- Changed math-mode slash units to renderer-safe `\text{...}` fragments such as `\text{m}^3\text{/h}` and `\text{m/s}`.
+
 ## [0.10.10] - 2026-07-08
 
 - Tightened slash-unit rendering in the mathematical formula manual with LaTeX negative thin spaces, so units such as `m^3/h`, `m^3/s`, and `m/s` do not render as spaced operators.

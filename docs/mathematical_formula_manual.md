@@ -28,7 +28,7 @@ SI units internally; US customary units are display conversions only.
 
 ### Flow Unit Conversion
 
-The app converts pump flow from $\mathrm{m^3}\!/\!\mathrm{h}$ to $\mathrm{m^3}\!/\!\mathrm{s}$ before power and velocity
+The app converts pump flow from $\text{m}^3\text{/h}$ to $\text{m}^3\text{/s}$ before power and velocity
 calculations.
 
 ```math
@@ -41,10 +41,10 @@ Q = 3600 Q_s
 
 **Example**
 
-For $Q = 36 \ \mathrm{m^3}\!/\!\mathrm{h}$:
+For $Q = 36 \ \text{m}^3\text{/h}$:
 
 ```math
-Q_s = \frac{36}{3600} = 0.0100 \ \mathrm{m^3}\!/\!\mathrm{s}
+Q_s = \frac{36}{3600} = 0.0100 \ \text{m}^3\text{/s}
 ```
 
 ## 2. Display Unit Conversions
@@ -55,7 +55,7 @@ values.
 ### SI To US Display Factors
 
 ```math
-Q_{\mathrm{gpm}} = 4.402868 Q_{\mathrm{m^3}\!/\!\mathrm{h}}
+Q_{\mathrm{gpm}} = 4.402868 Q_{\text{m}^3\text{/h}}
 ```
 
 ```math
@@ -75,11 +75,11 @@ D_{\mathrm{in}} = 0.03937008 D_{\mathrm{mm}}
 ```
 
 ```math
-\rho_{\mathrm{lb}\!/\!\mathrm{ft^3}} = 0.06242796 \rho_{\mathrm{kg}\!/\!\mathrm{m^3}}
+\rho_{\text{lb/ft}^3} = 0.06242796 \rho_{\text{kg/m}^3}
 ```
 
 ```math
-E_{\mathrm{kWh}\!/\!\mathrm{kgal}} = 3.785412 E_{\mathrm{kWh}\!/\!\mathrm{m^3}}
+E_{\text{kWh/kgal}} = 3.785412 E_{\text{kWh/m}^3}
 ```
 
 ```math
@@ -88,7 +88,7 @@ T_F = \frac{9}{5}T_C + 32
 
 **Example**
 
-For $Q = 120 \ \mathrm{m^3}\!/\!\mathrm{h}$ and $H = 32 \ \mathrm{m}$:
+For $Q = 120 \ \text{m}^3\text{/h}$ and $H = 32 \ \mathrm{m}$:
 
 ```math
 Q_{\mathrm{gpm}} = 4.402868(120) = 528.34 \ \mathrm{gpm}
@@ -129,14 +129,14 @@ friction approximately with $v^2$, so pipe size strongly affects TDH.
 
 **Example**
 
-For $Q = 36 \ \mathrm{m^3}\!/\!\mathrm{h}$ and $D = 100 \ \mathrm{mm}$:
+For $Q = 36 \ \text{m}^3\text{/h}$ and $D = 100 \ \mathrm{mm}$:
 
 ```math
 A = \frac{\pi}{4}(0.100)^2 = 0.007854 \ \mathrm{m^2}
 ```
 
 ```math
-v = \frac{36/3600}{0.007854} = 1.273 \ \mathrm{m}\!/\!\mathrm{s}
+v = \frac{36/3600}{0.007854} = 1.273 \ \text{m/s}
 ```
 
 ## 4. Reynolds Number
@@ -154,7 +154,7 @@ Low Reynolds number is common for viscous service or low flow.
 
 **Example**
 
-For $v = 1.273 \ \mathrm{m}\!/\!\mathrm{s}$, $D = 100 \ \mathrm{mm}$, $\rho = 1000 \ \mathrm{kg}\!/\!\mathrm{m^3}$, and
+For $v = 1.273 \ \text{m/s}$, $D = 100 \ \mathrm{mm}$, $\rho = 1000 \ \text{kg/m}^3$, and
 $\mu = 1.0 \ \mathrm{cP}$:
 
 ```math
@@ -305,8 +305,8 @@ depends on fitting count and geometry.
 
 **Example**
 
-For $Q=36 \ \mathrm{m^3}\!/\!\mathrm{h}$, $L=100 \ \mathrm{m}$, $D=100 \ \mathrm{mm}$, $\epsilon=0.046 \ \mathrm{mm}$,
-$\rho=1000 \ \mathrm{kg}\!/\!\mathrm{m^3}$, $\mu=1 \ \mathrm{cP}$, and $K=2$:
+For $Q=36 \ \text{m}^3\text{/h}$, $L=100 \ \mathrm{m}$, $D=100 \ \mathrm{mm}$, $\epsilon=0.046 \ \mathrm{mm}$,
+$\rho=1000 \ \text{kg/m}^3$, $\mu=1 \ \mathrm{cP}$, and $K=2$:
 
 ```math
 h_{line} \approx 1.789 \ \mathrm{m}
@@ -378,7 +378,7 @@ The operating point is where the pump curve and system curve intersect.
 
 **Example**
 
-For the default system at $Q = 110 \ \mathrm{m^3}\!/\!\mathrm{h}$:
+For the default system at $Q = 110 \ \text{m}^3\text{/h}$:
 
 ```math
 H_{sys}(110) \approx 23.253 \ \mathrm{m}
@@ -433,7 +433,7 @@ NPSHa, and power.
 At $T = 20^\circ \mathrm{C}$:
 
 ```math
-\rho_w \approx 998.204 \ \mathrm{kg}\!/\!\mathrm{m^3}
+\rho_w \approx 998.204 \ \text{kg/m}^3
 ```
 
 ```math
@@ -501,7 +501,7 @@ a replacement for process data sheets or vendor property data.
 
 **Example**
 
-For an aqueous preset with $\rho_{ref}=1068 \ \mathrm{kg}\!/\!\mathrm{m^3}$, $T_{ref}=20^\circ \mathrm{C}$,
+For an aqueous preset with $\rho_{ref}=1068 \ \text{kg/m}^3$, $T_{ref}=20^\circ \mathrm{C}$,
 and $T=30^\circ \mathrm{C}$:
 
 ```math
@@ -509,7 +509,7 @@ and $T=30^\circ \mathrm{C}$:
 ```
 
 ```math
-\rho(30) = 1063.7 \ \mathrm{kg}\!/\!\mathrm{m^3}
+\rho(30) = 1063.7 \ \text{kg/m}^3
 ```
 
 ## 14. Catalog Curve Interpolation
@@ -617,7 +617,7 @@ This is a screening fallback. It is not a substitute for a vendor curve.
 
 **Example**
 
-For $Q_b=120 \ \mathrm{m^3}\!/\!\mathrm{h}$, $H_b=32 \ \mathrm{m}$, and $\eta_{max}=0.78$:
+For $Q_b=120 \ \text{m}^3\text{/h}$, $H_b=32 \ \mathrm{m}$, and $\eta_{max}=0.78$:
 
 ```math
 H_0 = 1.25(32) = 40 \ \mathrm{m}
@@ -627,7 +627,7 @@ H_0 = 1.25(32) = 40 \ \mathrm{m}
 a = \frac{40-32}{120^2} = 0.0005556
 ```
 
-At $Q=120 \ \mathrm{m^3}\!/\!\mathrm{h}$:
+At $Q=120 \ \text{m}^3\text{/h}$:
 
 ```math
 H(120)=40-0.0005556(120)^2 = 32 \ \mathrm{m}
@@ -719,7 +719,7 @@ H_{scale}=0.5^2=0.25
 The BEP flow changes from $120$ to:
 
 ```math
-Q_b = 120(0.5)=60 \ \mathrm{m^3}\!/\!\mathrm{h}
+Q_b = 120(0.5)=60 \ \text{m}^3\text{/h}
 ```
 
 The BEP head changes from $32$ to:
@@ -856,7 +856,7 @@ margin. This is a screening model.
 
 **Example**
 
-For $Q_b=120 \ \mathrm{m^3}\!/\!\mathrm{h}$, $H_b=32 \ \mathrm{m}$, $\mu=150 \ \mathrm{cP}$, $N_s=40$, and
+For $Q_b=120 \ \text{m}^3\text{/h}$, $H_b=32 \ \mathrm{m}$, $\mu=150 \ \mathrm{cP}$, $N_s=40$, and
 $R_Q=1.0$:
 
 ```math
@@ -916,13 +916,13 @@ The BEP flow shifts with speed, impeller diameter, and viscosity.
 At reference speed and diameter, clean water:
 
 ```math
-Q_{BEP}=120(1)(1)=120 \ \mathrm{m^3}\!/\!\mathrm{h}
+Q_{BEP}=120(1)(1)=120 \ \text{m}^3\text{/h}
 ```
 
 For the 150 cP example with $C_Q=0.917$:
 
 ```math
-Q_{BEP,visc}=120(0.917)=110.1 \ \mathrm{m^3}\!/\!\mathrm{h}
+Q_{BEP,visc}=120(0.917)=110.1 \ \text{m}^3\text{/h}
 ```
 
 ## 19. NPSH Available
@@ -942,7 +942,7 @@ subtracting suction-side losses.
 
 **Example**
 
-For the default system at $Q=110 \ \mathrm{m^3}\!/\!\mathrm{h}$:
+For the default system at $Q=110 \ \text{m}^3\text{/h}$:
 
 ```math
 NPSHa \approx 10.907 \ \mathrm{m}
@@ -1040,17 +1040,17 @@ identical pumps and ideal distribution/losses.
 
 **Example**
 
-For two identical parallel pumps at total $Q=240 \ \mathrm{m^3}\!/\!\mathrm{h}$:
+For two identical parallel pumps at total $Q=240 \ \text{m}^3\text{/h}$:
 
 ```math
-Q_{per\ pump}=\frac{240}{2}=120 \ \mathrm{m^3}\!/\!\mathrm{h}
+Q_{per\ pump}=\frac{240}{2}=120 \ \text{m}^3\text{/h}
 ```
 
 ```math
 H_{combined}(240)=H_{single}(120)
 ```
 
-For two identical series pumps at $Q=120 \ \mathrm{m^3}\!/\!\mathrm{h}$:
+For two identical series pumps at $Q=120 \ \text{m}^3\text{/h}$:
 
 ```math
 H_{combined}(120)=2H_{single}(120)
@@ -1078,7 +1078,7 @@ achievable.
 For the current default case used in QC:
 
 ```math
-Q_{duty} \approx 162.752 \ \mathrm{m^3}\!/\!\mathrm{h}
+Q_{duty} \approx 162.752 \ \text{m}^3\text{/h}
 ```
 
 ```math
@@ -1119,7 +1119,7 @@ the action if the speed solution is outside the recommended affinity range.
 
 **Example**
 
-For the default selected flow $Q_{target}=110 \ \mathrm{m^3}\!/\!\mathrm{h}$:
+For the default selected flow $Q_{target}=110 \ \text{m}^3\text{/h}$:
 
 ```math
 N_{target} \approx 2474.8 \ \mathrm{rpm}
@@ -1170,7 +1170,7 @@ Hydraulic power is the useful liquid power added by the pump.
 
 **Example**
 
-For $Q=120 \ \mathrm{m^3}\!/\!\mathrm{h}$, $H=32 \ \mathrm{m}$, and $\rho=998 \ \mathrm{kg}\!/\!\mathrm{m^3}$:
+For $Q=120 \ \text{m}^3\text{/h}$, $H=32 \ \mathrm{m}$, and $\rho=998 \ \text{kg/m}^3$:
 
 ```math
 P_{hyd} =
@@ -1328,23 +1328,23 @@ efficiency, operating hours, and energy price.
 
 **Example**
 
-For $P_{brake,total}=13.4 \ \mathrm{kW}$, $\eta_m=0.91545$, $t=8000 \ \mathrm{h}\!/\!\mathrm{y}$,
-$c=0.12 \ \mathrm{USD}\!/\!\mathrm{kWh}$, and $Q=120 \ \mathrm{m^3}\!/\!\mathrm{h}$:
+For $P_{brake,total}=13.4 \ \mathrm{kW}$, $\eta_m=0.91545$, $t=8000 \ \text{h/y}$,
+$c=0.12 \ \text{USD/kWh}$, and $Q=120 \ \text{m}^3\text{/h}$:
 
 ```math
 P_{input}=\frac{13.4}{0.91545}=14.64 \ \mathrm{kW}
 ```
 
 ```math
-E_{year}=14.64(8000)=117100 \ \mathrm{kWh}\!/\!\mathrm{y}
+E_{year}=14.64(8000)=117100 \ \text{kWh/y}
 ```
 
 ```math
-C_{year}=117100(0.12)=14052 \ \mathrm{USD}\!/\!\mathrm{y}
+C_{year}=117100(0.12)=14052 \ \text{USD/y}
 ```
 
 ```math
-E_s=\frac{14.64}{120}=0.122 \ \mathrm{kWh}\!/\!\mathrm{m^3}
+E_s=\frac{14.64}{120}=0.122 \ \text{kWh/m}^3
 ```
 
 ## 30. Specific Speed
@@ -1361,7 +1361,7 @@ not from the combined parallel/series set.
 
 **Example**
 
-For $N=2950 \ \mathrm{rpm}$, $Q=120 \ \mathrm{m^3}\!/\!\mathrm{h}$, and $H=32 \ \mathrm{m}$:
+For $N=2950 \ \mathrm{rpm}$, $Q=120 \ \text{m}^3\text{/h}$, and $H=32 \ \mathrm{m}$:
 
 ```math
 N_s =
@@ -1418,10 +1418,10 @@ Minimum flow is a screening protection against recirculation and overheating.
 
 **Example**
 
-For $Q_{BEP}=120 \ \mathrm{m^3}\!/\!\mathrm{h}$ and $p_{min}=45\%$:
+For $Q_{BEP}=120 \ \text{m}^3\text{/h}$ and $p_{min}=45\%$:
 
 ```math
-Q_{min}=120(0.45)=54 \ \mathrm{m^3}\!/\!\mathrm{h}
+Q_{min}=120(0.45)=54 \ \text{m}^3\text{/h}
 ```
 
 ## 33. Preferred Operating Region
@@ -1439,7 +1439,7 @@ operating region and preferred operating region.
 
 **Example**
 
-If $Q_{duty}=162.75 \ \mathrm{m^3}\!/\!\mathrm{h}$ and $Q_{BEP}=120 \ \mathrm{m^3}\!/\!\mathrm{h}$:
+If $Q_{duty}=162.75 \ \text{m}^3\text{/h}$ and $Q_{BEP}=120 \ \text{m}^3\text{/h}$:
 
 ```math
 \frac{Q_{duty}}{Q_{BEP}}100 =
@@ -1471,10 +1471,10 @@ selection margin. The app also checks whether rated flow is left of BEP.
 
 **Example**
 
-For $Q_{duty}=162.75 \ \mathrm{m^3}\!/\!\mathrm{h}$, $M_Q=10\%$, and $M_H=0\%$:
+For $Q_{duty}=162.75 \ \text{m}^3\text{/h}$, $M_Q=10\%$, and $M_H=0\%$:
 
 ```math
-Q_{rated}=162.75(1.10)=179.03 \ \mathrm{m^3}\!/\!\mathrm{h}
+Q_{rated}=162.75(1.10)=179.03 \ \text{m}^3\text{/h}
 ```
 
 ```math
@@ -1509,14 +1509,14 @@ generic ANSI/HI band.
 **Example**
 
 For ISO 9906 Grade 2B, $\Delta Q=8\%$, $\Delta H=5\%$. If
-$Q_g=180 \ \mathrm{m^3}\!/\!\mathrm{h}$, $H_g=25 \ \mathrm{m}$:
+$Q_g=180 \ \text{m}^3\text{/h}$, $H_g=25 \ \mathrm{m}$:
 
 ```math
-Q_{low}=180(0.92)=165.6 \ \mathrm{m^3}\!/\!\mathrm{h}
+Q_{low}=180(0.92)=165.6 \ \text{m}^3\text{/h}
 ```
 
 ```math
-Q_{high}=180(1.08)=194.4 \ \mathrm{m^3}\!/\!\mathrm{h}
+Q_{high}=180(1.08)=194.4 \ \text{m}^3\text{/h}
 ```
 
 ```math
@@ -1588,7 +1588,7 @@ system, default pump, and current formula set.
 ### Solved Duty Point
 
 ```math
-Q_{duty} \approx 162.752 \ \mathrm{m^3}\!/\!\mathrm{h}
+Q_{duty} \approx 162.752 \ \text{m}^3\text{/h}
 ```
 
 ```math
