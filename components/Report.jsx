@@ -153,7 +153,7 @@ const Report = ({ state }) => {
         </ol>
 
         <div className="sign">
-          <div className="line">Prepared — {meta.preparedBy}, {meta.discipline}</div>
+          <div className="line">Prepared —</div>
           <div className="line">Checked —</div>
           <div className="line">Approved —</div>
         </div>
