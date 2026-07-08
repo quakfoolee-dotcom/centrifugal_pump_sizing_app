@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.10.7] - 2026-07-08
+
+- Added a LaTeX-style mathematical formula manual with engineering explanations and worked sample calculations.
+- Ignored local `.claude/` assistant tooling files so machine-specific settings are not published.
+
+## [0.10.6] - 2026-07-08
+
+- Added recommended affinity-law bounds for speed and impeller scaling, with calculator warnings and bounded sliders.
+- Added conservative viscous-service NPSHr correction and flow-ratio/specific-speed sensitivity to the screening viscosity model.
+- Made the absolute NPSH margin criterion user-configurable instead of hardcoded at 0.6 m.
+- Replaced fixed 93% motor efficiency with a size-based efficiency curve for energy and cost estimates.
+- Updated calculator, report, compare, engineering change record, standalone build, and smoke tests for the new QC controls.
+
 ## [0.10.5] - 2026-07-08
 
 - Replaced catalog pump curve polynomial fitting with monotone interpolation through entered catalog points.

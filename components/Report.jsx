@@ -7,17 +7,17 @@ const Report = ({ state }) => {
   const uh = U.unit("head"), uf = U.unit("flow"), up = U.unit("power"), upr = U.unit("press"), ud = U.unit("dia");
   const duty = window.computeDuty(state);
   const {
-    sumKs, sumKd, sysEff, effPump, nSet, arrange,
+    sumKs, sumKd, sysEff, effPump, affinity, affinityOutOfBounds, nSet, arrange,
     dutyQ, dutyPoint, noDutyPoint, Qmax,
     opH, opEta, opNPSHr, opNPSHa,
-    Phyd, PbrakePer, Pbrake, Pmotor, motor,
+    Phyd, PbrakePer, Pbrake, motorEff, Pmotor, motor,
     Ns, Nss, hfSuction: hfS, hfDischarge: hfD,
     staticLift, presHead, TDH, Re_s, flowRegimeS, transitionalFlow,
     design, ratedQ, ratedHsys: ratedH, ratedLeftOfBEP,
-    speedForDutyStatus, speedForDutyClamped,
+    speedForDutyStatus, speedForDutyClamped, speedTargetAffinityOk,
     en,
     visc, viscActive, viscHighRisk, curveEstimated, fluidPropsEstimated,
-    npshRatio, margin, ratioActual, cavOk,
+    npshRatio, npshMarginAbs, margin, ratioActual, cavOk,
     bepPct, qMin, belowMinFlow, highSuctionEnergy, inPOR,
     hasGenericReducer, minorLossesApprox,
   } = duty;
@@ -42,6 +42,8 @@ const Report = ({ state }) => {
     : (motor.selected_kW > 0 ? `${motor.selected_kW.toFixed(motor.selected_kW < 10 ? 2 : 1)} kW` : "n/a");
   const statusNotes = [
     speedForDutyClamped && "VFD target speed is outside 150-6000 rpm",
+    !speedTargetAffinityOk && speedForDutyStatus === "solved" && "VFD target speed is outside affinity range",
+    affinityOutOfBounds && `Affinity limits exceeded: ${affinity.messages.join(", ")}`,
     curveEstimated && "Pump curve is estimated from BEP data",
     fluidPropsEstimated && "Non-water preset properties are estimated",
     transitionalFlow && "Suction Reynolds number is transitional",
@@ -130,6 +132,7 @@ const Report = ({ state }) => {
                 <tr><td>Reference impeller D₀</td><td className="v">{U.fmt("dia", pump.D0, U.US ? 2 : 0)} {ud}</td></tr>
                 <tr><td>Operating speed N</td><td className="v">{pump.N} rpm</td></tr>
                 <tr><td>Impeller trim D</td><td className="v">{U.fmt("dia", pump.D, U.US ? 2 : 0)} {ud}</td></tr>
+                <tr><td>Affinity validity</td><td className="v" style={{color: affinityOutOfBounds ? "var(--bad)" : "var(--ok)"}}>{affinityOutOfBounds ? affinity.messages.join(", ") : "Inside recommended range"}</td></tr>
                 <tr><td>BEP (ref)</td><td className="v">{U.fmt("flow", pump.Qb, 0)} {uf} @ {U.fmt("head", pump.Hb, 1)} {uh}</td></tr>
                 <tr><td>η_max (ref)</td><td className="v">{(pump.etaMax*100).toFixed(0)} %</td></tr>
                 <tr><td>NPSHr @ BEP (ref)</td><td className="v">{U.fmt("head", pump.NPSHr_bep, 1)} {uh}</td></tr>
@@ -145,7 +148,7 @@ const Report = ({ state }) => {
                 <tr><td>Hydraulic power (total)</td><td className="v">{U.fmt("power", Phyd, 2)} {up}</td></tr>
                 <tr><td>Shaft power {arrange === "single" ? "(BHP)" : "· total"}</td><td className="v">{U.fmt("power", Pbrake, 2)} {up}</td></tr>
                 {arrange !== "single" && <tr><td>Shaft · per pump</td><td className="v">{U.fmt("power", PbrakePer, 2)} {up}</td></tr>}
-                <tr><td>Motor (η=0.93)</td><td className="v">{U.fmt("power", Pmotor, 2)} {up}</td></tr>
+                <tr><td>Motor input (η={(motorEff*100).toFixed(1)}%)</td><td className="v">{U.fmt("power", Pmotor, 2)} {up}</td></tr>
                 <tr><td>Motor selection · ea.</td><td className="v">≥ {motorReportText}</td></tr>
                 <tr><td>Specific speed Ns</td><td className="v">{Ns.toFixed(0)}</td></tr>
                 <tr><td>Suction Reynolds / regime</td><td className="v">{Re_s.toExponential(1)} / {flowRegimeS}</td></tr>
@@ -155,11 +158,12 @@ const Report = ({ state }) => {
                       <b>{U.fmt("head", margin, 2)} {uh}  {noDutyPoint ? "·  NO DUTY" : cavOk ? "·  OK" : "·  REVIEW"}</b>
                     </td></tr>
                 <tr><td>NPSHa / NPSHr ratio</td><td className="v">{ratioActual > 90 ? "—" : ratioActual.toFixed(2)} (req ≥ {npshRatio.toFixed(2)})</td></tr>
+                <tr><td>NPSH absolute margin req.</td><td className="v">{U.fmt("head", npshMarginAbs, 2)} {uh}</td></tr>
                 <tr><td>Suction sp. speed Nss</td><td className="v">{Nss.toFixed(0)}{Nss > 213 ? "  · high" : ""}</td></tr>
                 <tr><td>Min continuous flow</td><td className="v">{U.fmt("flow", qMin, 1)} {uf}</td></tr>
                 <tr><td>Duty / BEP</td><td className="v">{bepPct.toFixed(0)} %</td></tr>
                 <tr><td>Rated point (+{design.flowMargin}%Q)</td><td className="v">{U.fmt("flow", ratedQ, 1)} {uf} @ {U.fmt("head", ratedH, 1)} {uh}</td></tr>
-                <tr><td>Viscosity correction</td><td className="v">{viscActive ? `C_H ${visc.CH.toFixed(2)} · Cη ${visc.Ceta.toFixed(2)}` : "n/a (water)"}</td></tr>
+                <tr><td>Viscosity correction</td><td className="v">{viscActive ? `C_H ${visc.CH.toFixed(2)} · Cη ${visc.Ceta.toFixed(2)} · CNPSH ${visc.CNPSH.toFixed(2)}` : "n/a (water)"}</td></tr>
                 <tr><td>Annual energy</td><td className="v">{(en.kWhPerYear/1000).toFixed(1)} MWh/yr</td></tr>
                 <tr><td>Annual energy cost</td><td className="v">$ {en.costPerYear.toLocaleString(undefined,{maximumFractionDigits:0})}/yr</td></tr>
                 <tr><td>Specific energy</td><td className="v">{U.fmt("specE", en.specific_kWh_m3, 3)} {U.unit("specE")}</td></tr>
@@ -180,10 +184,10 @@ const Report = ({ state }) => {
         <div className="section-head">Notes &amp; assumptions</div>
         <ol style={{fontSize:11, color:"var(--ink-2)", lineHeight:1.6, paddingLeft:18, margin:0}}>
           <li>Friction losses per Darcy–Weisbach with Churchill friction factor; minor losses from generic fitting count × K-values.</li>
-          <li>Pump H(Q) from {curveEstimated ? "parametric estimate (shutoff = 1.25 × H_BEP)" : "monotone interpolation through entered catalog points"}; affinity laws applied for speed &amp; impeller trim.</li>
-          <li>NPSHa = (Patm + suction vessel P)/ρg + Zs − Pv/ρg − h_f,suction. Acceptance: NPSHa/NPSHr ≥ {npshRatio.toFixed(2)} (HI 9.6.1).</li>
-          <li>Fluid properties {fluid.key === "Custom" ? "entered manually" : `derived at ${(fluid.tempC != null ? fluid.tempC : 20).toFixed(0)} °C`}. Non-water presets and viscous correction are screening estimates; μ &gt; ~300 cP requires vendor curves.</li>
-          <li>Rated point = duty +{design.flowMargin}% flow / +{design.headMargin}% head; pump selected with rated flow left of BEP. Motor selection uses 15 % service margin and next IEC/NEMA catalog size.</li>
+          <li>Pump H(Q) from {curveEstimated ? "parametric estimate (shutoff = 1.25 × H_BEP)" : "monotone interpolation through entered catalog points"}; affinity laws are bounded to the recommended speed and impeller ranges shown in the calculator.</li>
+          <li>NPSHa = (Patm + suction vessel P)/ρg + Zs − Pv/ρg − h_f,suction. Acceptance: NPSHa/NPSHr ≥ {npshRatio.toFixed(2)} and absolute margin ≥ {U.fmt("head", npshMarginAbs, 2)} {uh}.</li>
+          <li>Fluid properties {fluid.key === "Custom" ? "entered manually" : `derived at ${(fluid.tempC != null ? fluid.tempC : 20).toFixed(0)} °C`}. Viscous correction is a flow/Ns-aware screening model with conservative NPSHr multiplier; μ &gt; ~300 cP requires vendor curves.</li>
+          <li>Rated point = duty +{design.flowMargin}% flow / +{design.headMargin}% head; pump selected with rated flow left of BEP. Motor selection uses 15 % service margin, next IEC/NEMA catalog size, and a size-based efficiency curve.</li>
         </ol>
 
         <div className="sign">

@@ -7,12 +7,15 @@ window.pumpMetrics = function (state) {
   const fluidName = fluid.key === "Custom" ? (fluid.customName || "Custom") : fluid.key;
   return {
     Q: duty.dutyQ, H: duty.opH, eta: duty.opEta, Pbrake: duty.Pbrake, Pmotor: duty.Pmotor,
+    motorEff: duty.motorEff,
     motorKW: duty.motor.selected_kW, motorHP: duty.motor.selected_hp,
     opNPSHa: duty.opNPSHa, opNPSHr: duty.opNPSHr, margin: duty.margin, ratio: duty.ratioActual,
     cavOk: duty.cavOk, noDutyPoint: duty.noDutyPoint, bepPct: duty.bepPct, TDH: duty.TDH, Nss: duty.Nss, Ns: duty.Ns,
     flowRegime: duty.flowRegimeS,
     flags: [
       duty.speedForDutyClamped && "VFD",
+      duty.affinityOutOfBounds && "affinity",
+      !duty.speedTargetAffinityOk && duty.speedForDutyStatus === "solved" && "VFD aff.",
       duty.curveEstimated && "curve est.",
       duty.fluidPropsEstimated && "fluid est.",
       duty.transitionalFlow && "Re trans.",
@@ -64,6 +67,7 @@ const Compare = ({ liveState, cases, unitSystem }) => {
     { k: `Duty / BEP`, get: m => m.bepPct, unit: "%", n: 0, dir: 0, near100: true },
     { k: `Shaft power`, q: "power", get: m => m.Pbrake, n: 2, dir: -1 },
     { k: `Motor input`, q: "power", get: m => m.Pmotor, n: 2, dir: -1 },
+    { k: `Motor efficiency`, get: m => m.motorEff * 100, unit: "%", n: 1, dir: 1 },
     { k: `Motor select · ea.`, get: m => U.US
       ? (m.motorHP > 0 ? `${m.motorHP.toFixed(m.motorHP < 10 ? 1 : 0)} hp` : "n/a")
       : (m.motorKW > 0 ? `${m.motorKW.toFixed(m.motorKW < 10 ? 2 : 1)} kW` : "n/a"), txt: true },

@@ -100,6 +100,8 @@ assertNear(PM.pumpH(0, referencePump), 40, 1e-12, "parametric shutoff head");
 assertNear(PM.pumpH(120, referencePump), 32, 1e-12, "parametric BEP head");
 assertNear(PM.pumpEta(120, referencePump), 0.78, 1e-12, "parametric BEP efficiency");
 assertNear(PM.pumpNPSHr(120, referencePump), 3.2, 1e-12, "parametric BEP NPSHr");
+assert(!PM.affinityStatus(referencePump).outOfBounds, "default pump should be inside affinity bounds");
+assert(PM.affinityStatus({ ...referencePump, N: 500, D: 120 }).outOfBounds, "large speed/diameter excursions should exceed affinity bounds");
 
 const halfSpeedPump = { ...referencePump, N: referencePump.N0 / 2 };
 assertNear(PM.bepFlow(halfSpeedPump), 60, 1e-12, "speed affinity flow scaling");
@@ -108,6 +110,13 @@ assertNear(PM.pumpH(60, halfSpeedPump), 8, 1e-12, "speed affinity head scaling")
 const viscousPump = PM.withViscosity(referencePump, 150);
 assertNear(PM.bepFlow(viscousPump), PM.bepFlow(referencePump) * viscousPump._corr.CQ, 1e-12, "viscous BEP flow correction");
 assertNear(PM.pumpEta(PM.bepFlow(viscousPump), viscousPump), referencePump.etaMax * viscousPump._corr.Ceta, 1e-12, "viscous BEP efficiency correction");
+assert(PM.pumpNPSHr(PM.bepFlow(viscousPump), viscousPump) > PM.pumpNPSHr(PM.bepFlow(referencePump), referencePump), "viscous NPSHr should be conservatively increased");
+const viscBep = PM.viscosityCorrection(120, 32, 150, 40, 1);
+const viscHighFlow = PM.viscosityCorrection(120, 32, 150, 40, 1.6);
+const viscHighNs = PM.viscosityCorrection(120, 32, 150, 80, 1);
+assert(viscHighFlow.CH < viscBep.CH, "viscous head correction should vary with flow ratio");
+assert(viscHighFlow.CNPSH > viscBep.CNPSH, "viscous NPSHr multiplier should increase away from BEP/high flow");
+assert(viscHighNs.Ceta < viscBep.Ceta, "viscosity correction should respond to pump specific speed");
 
 const parallelPump = { ...referencePump, arrangement: "parallel", nPumps: 2 };
 const seriesPump = { ...referencePump, arrangement: "series", nPumps: 2 };
@@ -141,6 +150,7 @@ assert(PM.pumpH(400, nonMonotoneCatalogPump) <= PM.pumpH(200, nonMonotoneCatalog
 assertNear(PM.motorSelection(12).selected_kW, 15, 1e-12, "motor selection should choose next IEC kW size");
 assertNear(PM.motorSelection(12).selected_hp, 20, 1e-12, "motor selection should choose next NEMA hp size");
 assertNear(PM.motorSelection(0).selected_kW, 0, 1e-12, "zero-duty motor selection should stay zero");
+assert(PM.motorEfficiency(1.5) < PM.motorEfficiency(200), "motor efficiency should increase with motor size");
 
 const duty = computeDuty(baseState);
 assert(duty.dutyQ > 0, "default duty flow should solve");
@@ -155,6 +165,11 @@ assertNear(PM.combinedH(duty.selectedQ, { ...duty.effPump, N: duty.speedForDuty 
 assert(duty.curveEstimated, "parametric pump curve should be flagged as estimated");
 assert(duty.minorLossesApprox, "default fitting K-values should be flagged as approximate");
 assert(duty.motor.selected_kW >= duty.PbrakePer * 1.15, "selected IEC motor should cover per-pump brake power plus margin");
+assertNear(duty.motorEff, PM.motorEfficiency(duty.motor.selected_kW), 1e-12, "duty motor efficiency should come from selected motor size");
+assertNear(duty.npshMarginAbs, 0.6, 1e-12, "default absolute NPSH margin should be 0.6 m");
+
+const strictNpshDuty = computeDuty({ ...baseState, pump: { ...baseState.pump, npshMarginAbs: 50 } });
+assert(!strictNpshDuty.cavOk, "configurable absolute NPSH margin should affect cavitation status");
 
 const tooHighVfd = PM.speedForDutyResult(referencePump, 300, 200);
 assert(tooHighVfd.status === "above-max", "unreachable high-head VFD target should report above max speed");

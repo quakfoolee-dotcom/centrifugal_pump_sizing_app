@@ -20,18 +20,72 @@ For each future change, add a new record with these sections:
 
 These items were identified during engineering review and are not fully closed:
 
-- Add practical validity bounds for affinity-law speed and impeller scaling.
-- Add conservative viscous-service handling for NPSHr or vendor/manual NPSHr input.
-- Improve viscosity correction so CQ, CH, and Ceta vary with Q/Qbep instead of one flat value.
-- Include pump specific speed or pump type in the viscosity derating model.
 - Verify viscosity correction calibration against the actual HI 9.6.7 chart or newer equation method.
-- Replace fixed 93 percent motor efficiency with a size-based efficiency table.
 - Improve non-water fluid property handling and correct sulfuric acid categorization.
-- Make the absolute NPSH margin floor configurable instead of hardcoded at 0.6 m.
-- Correct the suction specific speed unit-conversion comment.
 - Disclose idealized parallel and series pump assumptions in the report.
 
 ## Change Records
+
+### 0.10.6 - Affinity, Viscous NPSH, NPSH Margin, and Motor Efficiency Controls
+
+**Objective**
+
+Close the next set of critical engineering QC items: prevent overconfident
+affinity-law extrapolation, make viscous NPSHr conservative, improve the
+screening viscosity model shape, make absolute NPSH margin configurable, and
+replace fixed motor efficiency in energy calculations.
+
+**Before Fix**
+
+- Speed and impeller controls allowed large excursions from the reference pump
+  while still presenting affinity-scaled results as normal.
+- NPSHr was not increased for viscous service, making cavitation checks
+  optimistic for viscous liquids.
+- Viscosity correction used one flat CQ/CH/Ceta triplet across the whole curve.
+- Viscosity correction did not respond to pump specific speed.
+- NPSH absolute margin was hardcoded at 0.6 m.
+- Motor efficiency was fixed at 93 percent for all selected motor sizes.
+
+**After Fix**
+
+- Added recommended affinity-law bounds: speed 70-115 percent of reference and
+  impeller diameter 85-105 percent of reference. Calculator sliders now use
+  those bounds, and out-of-range saved states are flagged.
+- Added a conservative viscous NPSHr multiplier, displayed as CNPSH.
+- Updated the screening viscosity model to vary with flow ratio and pump
+  specific speed.
+- Added user-configurable absolute NPSH margin.
+- Added a size-based motor efficiency curve and used it for energy/cost results.
+- Corrected the suction specific speed unit-conversion comment.
+
+**Files Changed**
+
+- `lib/pumpMath.js`
+- `lib/duty.js`
+- `components/Calculator.jsx`
+- `components/Report.jsx`
+- `components/Compare.jsx`
+- `scripts/smoke-test.mjs`
+- `Pump_Calculator.html`
+- `Pump_Calculator_standalone.html`
+- `CHANGELOG.md`
+- `docs/engineering_change_record.md`
+
+**QC Results**
+
+- `npm run test` passed with added assertions for affinity bounds, viscous
+  NPSHr increase, flow-ratio viscosity variation, specific-speed sensitivity,
+  configurable NPSH margin, and motor-efficiency curve behavior.
+
+**Remaining Risk**
+
+The viscosity model remains a screening approximation until checked against the
+actual HI 9.6.7 chart/equation method or vendor curves. Final selection should
+still use vendor-certified pump curves for viscous or heavily trimmed duties.
+
+**Release / Commit**
+
+- Date: 2026-07-08
 
 ### 0.10.5 - Engineering QC Calculation Improvements
 
