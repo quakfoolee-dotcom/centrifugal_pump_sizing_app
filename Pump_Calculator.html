@@ -200,9 +200,7 @@ function App() {
   };
   const printReport = () => {
     setView("report");
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => window.print());
-    });
+    window.setTimeout(() => window.print(), 0);
   };
 
   return (

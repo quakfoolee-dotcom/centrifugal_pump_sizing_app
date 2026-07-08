@@ -34,6 +34,7 @@ Optional maintenance commands:
 ```bash
 npm run test
 npm run build:standalone
+npm run test:browser
 ```
 
 See `docs/smoke_test_matrix.md` for the smoke-test purpose, coverage matrix,
@@ -55,6 +56,7 @@ components/Calculator.jsx          Main calculator screen
 components/Report.jsx              Engineering report sheet
 components/Compare.jsx             Case comparison view
 scripts/smoke-test.mjs             No-dependency calculation smoke test
+scripts/browser-smoke-test.mjs     Headless Chrome/Edge workflow smoke test
 scripts/build-standalone.mjs       Regenerates the offline standalone file
 ```
 

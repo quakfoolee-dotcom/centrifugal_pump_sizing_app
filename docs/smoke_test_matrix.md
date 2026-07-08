@@ -1,36 +1,51 @@
 # Smoke Test Matrix
 
-This document describes the no-dependency smoke test used for routine QC of the
-Centrifugal Pump Sizing App.
+This document describes the smoke tests used for routine QC of the Centrifugal
+Pump Sizing App.
 
 ## Purpose
 
-The smoke test is a fast engineering regression check for the shared hydraulic
-math engine, unit conversions, case import/export helpers, and selected app
-shell wiring. It is intended to catch obvious calculation and workflow
+The source smoke test is a fast engineering regression check for the shared
+hydraulic math engine, unit conversions, case import/export helpers, and
+selected app shell wiring. The browser smoke test opens the standalone app in
+headless Chrome or Edge and exercises core user workflows through the DOM.
+Together, they are intended to catch obvious calculation and workflow
 regressions before committing or publishing.
 
-The smoke test is not a substitute for project engineering review, vendor pump
-selection, browser interaction testing, or visual report/print validation.
+The smoke tests are not a substitute for project engineering review, vendor pump
+selection, cross-browser certification, or visual report/print validation.
 
-## Command
+## Commands
 
 Run from the repository root:
 
 ```bash
 npm run test
+npm run build:standalone
+npm run test:browser
 ```
 
-The command executes:
+The source smoke test executes:
 
 ```bash
 node scripts/smoke-test.mjs
 ```
 
+The browser smoke test executes:
+
+```bash
+node scripts/browser-smoke-test.mjs
+```
+
+`npm run test:browser` requires a local Chrome or Edge executable. It serves the
+repo on an ephemeral localhost port and opens `Pump_Calculator_standalone.html`,
+so it does not depend on CDN access during the test.
+
 ## Expected Pass Output
 
 ```text
 smoke-test: duty solve, parallel case, and pipe helpers passed
+browser-smoke-test: tabs, metadata, case import/export, localStorage, units, and report print passed
 ```
 
 Any thrown error means the smoke test failed. The error message names the
@@ -55,19 +70,24 @@ calculation or workflow assertion that failed.
 | Case workflow | Current-state case export, valid single-case import, case-library import without active-state replacement, and invalid library rejection. |
 | App shell wiring | Main app loads the case helper, topbar uses the shared version, report-print handler is wired, report-print label is explicit, metadata status fallback is removed, and print CSS targets the report view. |
 | Standalone artifact hygiene | Committed standalone HTML does not accumulate duplicate app CSS header comments. |
+| Browser bootstrap | Standalone app loads in headless Chrome/Edge without CDN access and exposes the shared helpers. |
+| Browser navigation | Calculator, Report preview, and Compare tabs activate through click interactions. |
+| Browser metadata workflow | Report metadata fields are edited through real inputs and verified in the report titleblock. |
+| Browser case workflow | Save to localStorage, current-case JSON download, invalid JSON import alert, valid single-case import, valid library import, and a library containing a case named `state`. |
+| Browser unit workflow | SI to US toggle updates the visible app shell. |
+| Browser print workflow | `Print Report / PDF` routes from Compare to Report before invoking `window.print()`. |
 
 ## Not Covered Yet
 
-- Full browser interaction such as clicking controls, importing files through
-  the file picker, or verifying downloaded JSON files in a real browser.
 - Visual chart inspection, drag-handle behavior, and responsive layout
   screenshots.
 - Browser print-preview/PDF visual validation. The smoke test checks that print
-  CSS and the report-print handler are wired, but it does not inspect the print
-  preview output.
-- LocalStorage persistence behavior across browser reloads.
-- Cross-browser behavior for React/Babel CDN loading, file downloads, and print
-  rendering.
+  CSS and report-print routing are wired, but it does not inspect the print
+  preview output or generated PDF pages.
+- Native operating-system file-picker dialog behavior. The browser smoke test
+  sets the selected file through Chrome DevTools Protocol.
+- Cross-browser behavior beyond the local Chrome/Edge executable used by the
+  browser smoke test.
 - Vendor-grade hydraulic validation against certified pump curves, HI charts, or
   project specifications.
 
@@ -84,7 +104,14 @@ Recommended pre-commit QC:
 ```bash
 npm run test
 npm run build:standalone
-npm run test
+npm run test:browser
+git diff --check
+```
+
+Idempotency check for standalone build changes:
+
+```bash
+npm run build:standalone
 git diff --check
 ```
 

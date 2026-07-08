@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.18] - 2026-07-08
+
+- Added `npm run test:browser`, a headless Chrome/Edge workflow smoke test for the standalone app.
+- Covered browser tab navigation, metadata editing/report reflection, localStorage save, JSON export/download, invalid and valid JSON imports, unit toggle, and report-print routing.
+- Made `Print Report / PDF` use a timeout-based print scheduler so the handler also fires in hidden/headless browser contexts.
+- Hardened case-library import so a hand-built library containing a valid case named `state` plus sibling cases imports as a library instead of dropping siblings.
+- Updated the smoke-test matrix, README, engineering change record, standalone artifact, and shared app version.
+
 ## [0.10.17] - 2026-07-08
 
 - Fixed standalone build idempotency by preserving only offline `@font-face` blocks from the previous wrapper before appending fresh app CSS.

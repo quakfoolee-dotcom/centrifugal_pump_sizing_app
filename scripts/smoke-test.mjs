@@ -78,7 +78,7 @@ const baseState = {
   op: { Q: 110 },
 };
 
-assert(PumpCases.APP_VERSION === "0.10.17", "app version helper should match this release");
+assert(PumpCases.APP_VERSION === "0.10.18", "app version helper should match this release");
 const editedState = {
   ...baseState,
   meta: { ...baseState.meta, tag: "LIVE-EDIT", docNo: "" },
@@ -104,6 +104,14 @@ const libraryImport = PumpCases.parseCaseImport(
 );
 assert(libraryImport.kind === "library" && !libraryImport.activeState, "library import should not replace active state");
 assert(libraryImport.cases["Library One"].meta.tag === "LIVE-EDIT", "library import should add valid cases");
+const stateNamedLibrary = PumpCases.parseCaseImport(
+  { state: editedState, Other: { ...editedState, meta: { ...editedState.meta, tag: "OTHER" } } },
+  "state-library.json",
+  {},
+  baseState
+);
+assert(stateNamedLibrary.kind === "library", "case library with a case named state and siblings should import as a library");
+assert(stateNamedLibrary.cases.state && stateNamedLibrary.cases.Other, "state-named library should preserve sibling cases");
 assertThrows(
   () => PumpCases.parseCaseImport({ foo: { bar: 1 } }, "bad.json", {}, baseState),
   /pump and sys objects/,
@@ -114,6 +122,7 @@ const appHtml = readFileSync("Pump_Calculator.html", "utf8");
 assert(appHtml.includes("lib/caseLibrary.js"), "main app should load case library helper");
 assert(appHtml.includes("v{APP_VERSION}"), "topbar should use shared app version");
 assert(appHtml.includes("onClick={printReport}"), "print button should route through report print handler");
+assert(appHtml.includes("window.setTimeout(() => window.print(), 0)"), "print handler should not depend on a second animation frame");
 assert(appHtml.includes("Print Report / PDF"), "print button label should make report-only output explicit");
 assert(!appHtml.includes("meta?.docNo || \"CAL-HYD-0142\""), "status bar should not fall back to demo doc number");
 const appCss = readFileSync("styles.css", "utf8");

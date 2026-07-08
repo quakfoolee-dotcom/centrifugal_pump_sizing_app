@@ -25,6 +25,84 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.18 - Browser Workflow Smoke Test And Import/Print Hardening
+
+**Objective**
+
+Add repeatable full-browser workflow smoke coverage for the app, document the
+covered interactions and remaining gaps, and harden the two small workflow edges
+that matter for automated browser QC.
+
+**Before Fix**
+
+- Routine QC covered calculation helpers and source-level wiring, but not real
+  browser clicks, file input import, JSON download verification, localStorage
+  behavior, unit toggling, or print routing in a live DOM.
+- `printReport` depended on a double `requestAnimationFrame`, which can be
+  skipped in hidden/headless browser contexts even though normal visible use was
+  not affected.
+- A hand-built JSON library with a valid case literally named `state` plus
+  sibling cases could be mistaken for a single-case wrapper and drop the
+  siblings.
+- The smoke-test matrix still listed browser interaction and localStorage
+  behavior as untested.
+
+**After Fix**
+
+- Added `scripts/browser-smoke-test.mjs`, a no-dependency Chrome DevTools
+  Protocol runner that serves the repository locally, opens the standalone app
+  in headless Chrome/Edge, and drives the UI through browser DOM interactions.
+- Added `npm run test:browser`.
+- Browser smoke coverage now includes tab navigation, metadata input edits and
+  report reflection, case save to localStorage, current-case JSON download
+  verification, invalid JSON import alerting, valid single-case import, valid
+  library import without active-state replacement, a library containing a case
+  named `state`, SI/US unit toggle, and Compare-to-Report print routing.
+- Changed report printing to use a timeout-based scheduler after switching to
+  the report view so it is robust in headless/hidden browser execution.
+- Tightened case-import detection so only schema-tagged or true legacy
+  single-case wrappers take the single-case branch; mixed case-like objects are
+  imported as libraries.
+- Updated the smoke-test matrix and README to document the new command,
+  expected output, coverage areas, and remaining non-covered visual/cross-browser
+  risks.
+- Bumped the shared app version to `0.10.18`.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `Pump_Calculator.html`
+- `Pump_Calculator_standalone.html`
+- `README.md`
+- `docs/engineering_change_record.md`
+- `docs/smoke_test_matrix.md`
+- `lib/caseLibrary.js`
+- `package.json`
+- `scripts/browser-smoke-test.mjs`
+- `scripts/smoke-test.mjs`
+
+**QC Results**
+
+- `npm run test` passed.
+- `npm run build:standalone` passed.
+- `npm run test:browser` passed.
+- Reran `npm run build:standalone` and confirmed the standalone build stayed
+  idempotent.
+- `git diff --check` passed.
+
+**Remaining Risk**
+
+The browser smoke test verifies behavior through headless Chrome/Edge DOM
+automation. It does not visually inspect charts, drag handles, responsive
+screenshots, native OS file-picker dialogs, browser print-preview output,
+generated PDF pages, or vendor-grade hydraulic validation.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.17 - Standalone Build Idempotency And Smoke Test Matrix
 
 **Objective**
