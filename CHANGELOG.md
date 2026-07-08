@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.10.2] - 2026-07-08
+
+- Removed the default preparer name from the report header and cleared matching legacy autosave metadata.
+
 ## [0.10.1] - 2026-07-08
 
 - Renamed app HTML files to underscore-based filenames so local and GitHub Pages URLs do not require `%20`.

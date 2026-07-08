@@ -76,8 +76,8 @@ const initialState = {
     tag: "P-101A",
     docNo: "CAL-HYD-0142",
     rev: "D",
-    preparedBy: "J. Rivera",
-    discipline: "Mech.",
+    preparedBy: "",
+    discipline: "",
   },
   unitSystem: "SI",
   op: { Q: 110 },
@@ -94,14 +94,21 @@ function App() {
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("pumpcalc:v4") || "null");
-      if (saved) setState(s => ({
+      if (saved) {
+        const savedMeta = { ...(saved.meta || {}) };
+        if (savedMeta.preparedBy === "J. Rivera") {
+          savedMeta.preparedBy = "";
+          savedMeta.discipline = "";
+        }
+        setState(s => ({
         ...s, ...saved,
         pump: { ...s.pump, ...(saved.pump || {}) },
         sys:  { ...s.sys,  ...(saved.sys  || {}) },
         design: { ...s.design, ...(saved.design || {}) },
         econ: { ...s.econ, ...(saved.econ || {}) },
-        meta: { ...s.meta, ...(saved.meta || {}) },
+        meta: { ...s.meta, ...savedMeta },
       }));
+      }
       const savedView = localStorage.getItem("pumpcalc:view");
       if (savedView) setView(savedView);
     } catch {}

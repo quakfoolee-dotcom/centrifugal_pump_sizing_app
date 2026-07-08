@@ -28,10 +28,13 @@ const Report = ({ state }) => {
     tag: "P-101A",
     docNo: "CAL-HYD-0142",
     rev: "D",
-    preparedBy: "J. Rivera",
-    discipline: "Mech.",
+    preparedBy: "",
+    discipline: "",
     ...(state.meta || {}),
   };
+  const preparedLine = meta.preparedBy
+    ? `Prepared by  ${meta.preparedBy}${meta.discipline ? ` · ${meta.discipline}` : ""}`
+    : "Prepared by  —";
 
   const today = new Date();
   const d = today.toISOString().slice(0, 10);
@@ -56,7 +59,7 @@ const Report = ({ state }) => {
         </div>
 
         <h1>Centrifugal Pump Sizing Calculation</h1>
-        <div className="doc-id">Prepared by  {meta.preparedBy} · {meta.discipline}  ·  Checked —  ·  Approved —</div>
+        <div className="doc-id">{preparedLine}  ·  Checked —  ·  Approved —</div>
 
         <div className="two-col">
           <div>
