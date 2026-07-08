@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.12] - 2026-07-08
+
+- Extrapolated catalog efficiency past the last entered efficiency point instead of holding it flat.
+- Added flags for solved duty points outside the entered catalog flow range and for catalog head data flattened by monotone enforcement.
+- Reclassified sulfuric acid as a mineral-acid fluid preset instead of an organic preset.
+- Surfaced screening-grade viscosity correction coefficient warnings and removed unused duty outputs.
+- Updated the formula manual, engineering change record, standalone build, and smoke tests for the catalog/fluid QC fixes.
+
 ## [0.10.11] - 2026-07-08
 
 - Removed visible LaTeX spacing commands from slash-unit notation in the mathematical formula manual.

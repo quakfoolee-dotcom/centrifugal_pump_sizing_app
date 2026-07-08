@@ -117,7 +117,8 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
     design, ratedQ, ratedHsys, ratedLeftOfBEP,
     speedForDuty, speedForDutyStatus, speedForDutyClamped, speedTargetAffinityOk, minVfd,
     econ, en,
-    visc, viscActive, viscHighRisk, curveEstimated, fluidPropsEstimated,
+    visc, viscActive, viscHighRisk, viscModelScreening, curveEstimated,
+    catalogHeadFlattened, catalogExtrap, catalogExtrapolated, fluidPropsEstimated,
     npshRatio, npshMarginAbs, margin, ratioActual, cavOk,
     bepQ, bepPct, qMin, belowMinFlow, highSuctionEnergy, inPOR,
     sN, sD,
@@ -164,7 +165,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
     Ammonia:    { name: "Ammonia (liquid)",     rho: 603,  mu: 0.13,  Pvap_kPa: 1003,  Tref: 25, cat: "organic" },
     Brine:      { name: "NaCl brine 20%",       rho: 1148, mu: 1.9,   Pvap_kPa: 1.8,   Tref: 20, cat: "aqueous" },
     CaCl2:      { name: "CaCl₂ brine 25%",      rho: 1230, mu: 4.2,   Pvap_kPa: 1.5,   Tref: 20, cat: "aqueous" },
-    SulfAcid:   { name: "Sulfuric acid 98%",    rho: 1840, mu: 26,    Pvap_kPa: 0.001, Tref: 25, cat: "organic" },
+    SulfAcid:   { name: "Sulfuric acid 98%",    rho: 1840, mu: 26,    Pvap_kPa: 0.001, Tref: 25, cat: "mineral_acid" },
     CausticSoda:{ name: "Caustic soda 30%",     rho: 1330, mu: 6.8,   Pvap_kPa: 1.6,   Tref: 20, cat: "aqueous" },
     CrudeOil:   { name: "Crude oil (light)",    rho: 850,  mu: 10,    Pvap_kPa: 0.3,   Tref: 20, cat: "organic" },
     Slurry:     { name: "Slurry (10% solids)",  rho: 1080, mu: 5.0,   Pvap_kPa: 2.34,  Tref: 20, cat: "aqueous" },
@@ -322,7 +323,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
               ))}
               <button className="btn" style={{marginTop:4, width:"100%"}} onClick={addCat}>+ add point</button>
               <div style={{fontSize:10, color:"var(--mute)", marginTop:6, lineHeight:1.4}}>
-                Head uses monotone interpolation through entered points. η/NPSHr are optional and linearly interpolated. Points are at N₀, D₀.
+                Head uses monotone interpolation through entered points; rising head entries are flattened and flagged. η/NPSHr are optional and extrapolated past the last point. Points are at N₀, D₀.
               </div>
             </div>
           )}
@@ -440,7 +441,8 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         </div>
 
         {(noDutyPoint || affinityOutOfBounds || speedForDutyClamped || vfdAffinityWarn || belowMinFlow || !cavOk || highSuctionEnergy || !inPOR ||
-          !ratedLeftOfBEP || viscActive || viscHighRisk || curveEstimated || fluidPropsEstimated ||
+          !ratedLeftOfBEP || viscActive || viscHighRisk || viscModelScreening || curveEstimated ||
+          catalogExtrapolated || catalogHeadFlattened || fluidPropsEstimated ||
           transitionalFlow || minorLossesApprox) && (
           <div style={{display:"flex", flexWrap:"wrap", gap:8, padding:"8px var(--pad)", borderTop:"var(--hair)"}}>
             {noDutyPoint && <span className="pill bad">◆ No achievable duty point — pump/system mismatch</span>}
@@ -452,10 +454,13 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
             {highSuctionEnergy && <span className="pill warn">▲ High suction energy · Nss {Nss.toFixed(0)}</span>}
             {!noDutyPoint && !inPOR && !belowMinFlow && <span className="pill warn">▲ Outside preferred region ({bepPct.toFixed(0)}% BEP)</span>}
             {curveEstimated && <span className="pill warn">▲ Estimated pump curve — add vendor catalog points</span>}
+            {catalogExtrapolated && <span className="pill warn">▲ Catalog curve extrapolated {catalogExtrap.above ? "above" : "below"} entered flow range</span>}
+            {catalogHeadFlattened && <span className="pill warn">▲ Catalog head data flattened — check rising/unstable curve</span>}
             {fluidPropsEstimated && <span className="pill warn">▲ Preset fluid properties are estimated</span>}
             {transitionalFlow && <span className="pill warn">▲ Transitional suction Reynolds number</span>}
             {minorLossesApprox && <span className="pill warn">▲ {hasGenericReducer ? "Reducer K-value is generic" : "Fitting K-values are generic"}</span>}
             {viscActive && <span className="pill">● Approx viscous correction active · μ {sys.mu.toFixed(1)} cP · NPSHr ×{visc.CNPSH.toFixed(2)}</span>}
+            {viscModelScreening && <span className="pill warn">▲ Viscosity correction coefficients are screening-grade</span>}
             {viscHighRisk && <span className="pill warn">▲ Vendor viscous curve required</span>}
             {!ratedLeftOfBEP && <span className="pill warn">▲ Rated flow right of BEP — select larger pump</span>}
           </div>
@@ -548,7 +553,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         </div>
 
         <div style={{padding:"10px var(--pad) 16px", color:"var(--mute)", fontSize:11, lineHeight:1.5}}>
-          Model: Darcy–Weisbach + Churchill friction · {curveEstimated ? "estimated parametric pump curve" : "monotone interpolation through catalog points"} · bounded affinity Q∝ND, H∝(ND)² · flow/Ns-aware screening viscous correction with conservative NPSHr factor · generic fitting K library · configurable NPSH ratio and absolute margin · min flow &amp; Nss stability limits · Ns = N·√Q/H<sup>0.75</sup>.
+          Model: Darcy–Weisbach + Churchill friction · {curveEstimated ? "estimated parametric pump curve" : "monotone catalog interpolation with extrapolation/flattening flags"} · bounded affinity Q∝ND, H∝(ND)² · flow/Ns-aware screening viscous correction with conservative NPSHr factor · generic fitting K library · configurable NPSH ratio and absolute margin · min flow &amp; Nss stability limits · Ns = N·√Q/H<sup>0.75</sup>.
         </div>
       </div>
     </div>

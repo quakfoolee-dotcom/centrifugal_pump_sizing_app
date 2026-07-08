@@ -461,6 +461,10 @@ The app uses:
 ```
 
 ```math
+\beta = 5.5 \times 10^{-4} \quad \text{for mineral acid presets}
+```
+
+```math
 \beta = 8 \times 10^{-4} \quad \text{for organic presets}
 ```
 
@@ -478,7 +482,7 @@ B = \max(1200,\min(6000,600\ln(\max(\mu_{ref},1))+1400))
 \right)
 ```
 
-### Aqueous Vapor Pressure
+### Aqueous And Mineral Acid Vapor Pressure
 
 ```math
 P_{vap}(T) =
@@ -515,7 +519,8 @@ and $T=30^\circ \mathrm{C}$:
 ## 14. Catalog Curve Interpolation
 
 Catalog points are sorted by flow. Duplicate flow entries are averaged. Head
-points are forced to be non-increasing with flow.
+points are forced to be non-increasing with flow; if entered head data has a
+rising segment, the app flags that the catalog data was flattened.
 
 ### Duplicate-Point Average
 
@@ -541,8 +546,8 @@ y(x) = y_a + \frac{x-x_a}{x_b-x_a}(y_b-y_a)
 
 ### High-Flow Extrapolation
 
-For head and NPSHr above the last point, the app uses the last segment slope and
-then clamps to the allowed minimum.
+For head, efficiency, and NPSHr above the last point, the app uses the last
+segment slope and then clamps to the allowed minimum.
 
 ```math
 y(x) = y_b + \frac{y_b-y_a}{x_b-x_a}(x-x_b)
@@ -551,7 +556,9 @@ y(x) = y_b + \frac{y_b-y_a}{x_b-x_a}(x-x_b)
 **Engineering Explanation**
 
 This avoids polynomial curve artifacts from sparse catalog data. Real pump
-curves should still be entered from vendor data wherever possible.
+curves should still be entered from vendor data wherever possible. If the solved
+duty point falls below or above the entered catalog flow range, the app flags
+that catalog extrapolation is being used.
 
 **Example**
 
@@ -734,8 +741,9 @@ be treated as extrapolation.
 ## 17. Screening Viscosity Correction
 
 The app uses a screening viscosity correction. It is not a certified HI 9.6.7
-implementation and should be checked against vendor or standard-method curves
-for final selection.
+implementation. Its tuning constants are self-consistent screening coefficients
+and should be checked against HI 9.6.7, vendor, or standard-method curves before
+using viscous-service results for final selection.
 
 ### Specific Speed Used In Correction
 

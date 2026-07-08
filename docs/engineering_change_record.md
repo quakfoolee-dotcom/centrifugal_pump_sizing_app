@@ -21,10 +21,80 @@ For each future change, add a new record with these sections:
 These items were identified during engineering review and are not fully closed:
 
 - Verify viscosity correction calibration against the actual HI 9.6.7 chart or newer equation method.
-- Improve non-water fluid property handling and correct sulfuric acid categorization.
+- Improve non-water fluid property handling beyond the current screening preset correlations.
 - Disclose idealized parallel and series pump assumptions in the report.
 
 ## Change Records
+
+### 0.10.12 - Catalog Curve And Fluid QC Flags
+
+**Objective**
+
+Close the remaining catalog-curve and fluid-property QC findings: make
+high-flow catalog efficiency extrapolate, warn when duty uses extrapolated
+catalog data, warn when catalog head data is flattened, correct sulfuric acid
+classification, and make viscosity-correction coefficient risk explicit.
+
+**Before Fix**
+
+- Catalog efficiency held flat beyond the last entered efficiency point.
+- A solved duty point beyond the entered catalog flow range was not flagged.
+- Monotone head enforcement could flatten rising catalog head data without any
+  warning.
+- Sulfuric acid 98 percent used the organic preset property branch.
+- Viscosity correction coefficients were disclosed as screening approximations
+  in documentation, but the app did not flag that coefficient calibration risk.
+- `computeDuty` returned unused `selectedH` and `viscBep` values.
+
+**After Fix**
+
+- Catalog efficiency now uses high-flow extrapolation with the last entered
+  efficiency segment, matching head and NPSHr behavior.
+- Added catalog extrapolation status based on the solved per-pump duty flow in
+  the reference catalog frame.
+- Added a catalog head-flattening status when entered head data rises with flow
+  and is forced non-increasing.
+- Reclassified sulfuric acid as `mineral_acid`, using an aqueous-like
+  low-vapor-pressure property path instead of the organic branch.
+- Added calculator, report, and compare flags for catalog extrapolation,
+  flattened catalog head data, and screening-grade viscosity coefficients.
+- Removed unused `selectedH` and `viscBep` outputs from `computeDuty`.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `components/Calculator.jsx`
+- `components/Compare.jsx`
+- `components/Report.jsx`
+- `docs/engineering_change_record.md`
+- `docs/mathematical_formula_manual.md`
+- `lib/duty.js`
+- `lib/pumpMath.js`
+- `scripts/smoke-test.mjs`
+- `Pump_Calculator_standalone.html`
+
+**QC Results**
+
+- Added smoke-test coverage for catalog efficiency high-flow extrapolation.
+- Added smoke-test coverage for catalog extrapolation and monotone head
+  flattening flags.
+- Added smoke-test coverage for the mineral-acid fluid-property branch.
+- `npm run test` passed.
+- `npm run build:standalone` passed.
+- `git diff --check` passed with line-ending warnings only.
+
+**Remaining Risk**
+
+The viscosity correction coefficients remain screening approximations until
+validated against HI 9.6.7 or vendor data. Catalog extrapolated regions remain
+lower-confidence than entered vendor test points even though they are now
+explicitly flagged.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
 
 ### 0.10.11 - Remove Visible Unit Spacing Commands
 

@@ -16,7 +16,8 @@ const Report = ({ state }) => {
     design, ratedQ, ratedHsys: ratedH, ratedLeftOfBEP,
     speedForDutyStatus, speedForDutyClamped, speedTargetAffinityOk,
     en,
-    visc, viscActive, viscHighRisk, curveEstimated, fluidPropsEstimated,
+    visc, viscActive, viscHighRisk, viscModelScreening, curveEstimated,
+    catalogHeadFlattened, catalogExtrap, catalogExtrapolated, fluidPropsEstimated,
     npshRatio, npshMarginAbs, margin, ratioActual, cavOk,
     bepPct, qMin, belowMinFlow, highSuctionEnergy, inPOR,
     hasGenericReducer, minorLossesApprox,
@@ -45,9 +46,12 @@ const Report = ({ state }) => {
     !speedTargetAffinityOk && speedForDutyStatus === "solved" && "VFD target speed is outside affinity range",
     affinityOutOfBounds && `Affinity limits exceeded: ${affinity.messages.join(", ")}`,
     curveEstimated && "Pump curve is estimated from BEP data",
+    catalogExtrapolated && `Duty point is ${catalogExtrap.above ? "above" : "below"} the entered catalog flow range`,
+    catalogHeadFlattened && "Entered catalog head data was flattened to enforce a non-increasing curve",
     fluidPropsEstimated && "Non-water preset properties are estimated",
     transitionalFlow && "Suction Reynolds number is transitional",
     minorLossesApprox && (hasGenericReducer ? "Reducer/expander K-value is generic" : "Fitting K-values are generic"),
+    viscModelScreening && "Viscosity correction coefficients are screening-grade and should be validated with HI/vendor data",
     viscHighRisk && "High-viscosity service requires vendor viscous curves",
     belowMinFlow && "Duty is below minimum continuous flow",
     highSuctionEnergy && "High suction energy screening limit is exceeded",
@@ -184,7 +188,7 @@ const Report = ({ state }) => {
         <div className="section-head">Notes &amp; assumptions</div>
         <ol style={{fontSize:11, color:"var(--ink-2)", lineHeight:1.6, paddingLeft:18, margin:0}}>
           <li>Friction losses per Darcy–Weisbach with Churchill friction factor; minor losses from generic fitting count × K-values.</li>
-          <li>Pump H(Q) from {curveEstimated ? "parametric estimate (shutoff = 1.25 × H_BEP)" : "monotone interpolation through entered catalog points"}; affinity laws are bounded to the recommended speed and impeller ranges shown in the calculator.</li>
+          <li>Pump H(Q) from {curveEstimated ? "parametric estimate (shutoff = 1.25 × H_BEP)" : "monotone interpolation through entered catalog points"}; catalog extrapolation and flattened rising head entries are flagged; affinity laws are bounded to the recommended speed and impeller ranges shown in the calculator.</li>
           <li>NPSHa = (Patm + suction vessel P)/ρg + Zs − Pv/ρg − h_f,suction. Acceptance: NPSHa/NPSHr ≥ {npshRatio.toFixed(2)} and absolute margin ≥ {U.fmt("head", npshMarginAbs, 2)} {uh}.</li>
           <li>Fluid properties {fluid.key === "Custom" ? "entered manually" : `derived at ${(fluid.tempC != null ? fluid.tempC : 20).toFixed(0)} °C`}. Viscous correction is a flow/Ns-aware screening model with conservative NPSHr multiplier; μ &gt; ~300 cP requires vendor curves.</li>
           <li>Rated point = duty +{design.flowMargin}% flow / +{design.headMargin}% head; pump selected with rated flow left of BEP. Motor selection uses 15 % service margin, next IEC/NEMA catalog size, and a size-based efficiency curve.</li>

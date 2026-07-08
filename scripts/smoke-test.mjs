@@ -117,6 +117,10 @@ const viscHighNs = PM.viscosityCorrection(120, 32, 150, 80, 1);
 assert(viscHighFlow.CH < viscBep.CH, "viscous head correction should vary with flow ratio");
 assert(viscHighFlow.CNPSH > viscBep.CNPSH, "viscous NPSHr multiplier should increase away from BEP/high flow");
 assert(viscHighNs.Ceta < viscBep.Ceta, "viscosity correction should respond to pump specific speed");
+const acidProps = PM.deriveProps({ rho: 1840, mu: 26, Pvap_kPa: 0.001, Tref: 25, cat: "mineral_acid" }, 35);
+const organicAcidProps = PM.deriveProps({ rho: 1840, mu: 26, Pvap_kPa: 0.001, Tref: 25, cat: "organic" }, 35);
+assert(acidProps.rho > organicAcidProps.rho, "mineral acid preset should use lower thermal expansion than organic fluids");
+assert(Math.abs(acidProps.Pvap_kPa - organicAcidProps.Pvap_kPa) > 1e-6, "mineral acid preset should not use organic vapor-pressure scaling");
 
 const parallelPump = { ...referencePump, arrangement: "parallel", nPumps: 2 };
 const seriesPump = { ...referencePump, arrangement: "series", nPumps: 2 };
@@ -145,8 +149,28 @@ const nonMonotoneCatalogPump = {
   ],
 };
 assert(PM.hasCatalogCurve(nonMonotoneCatalogPump), "valid catalog curve should be recognized");
+assert(PM.catalogHeadStatus(nonMonotoneCatalogPump).flattened, "rising catalog head data should be flagged when flattened");
 assert(PM.pumpH(200, nonMonotoneCatalogPump) <= PM.pumpH(100, nonMonotoneCatalogPump), "catalog head should be forced non-increasing with flow");
 assert(PM.pumpH(400, nonMonotoneCatalogPump) <= PM.pumpH(200, nonMonotoneCatalogPump), "catalog high-flow extrapolation should not rise");
+assert(PM.pumpEta(300, catalogPump) < PM.pumpEta(200, catalogPump), "catalog efficiency should extrapolate downward past the last point");
+const catalogRangeStatus = PM.catalogExtrapolationStatus(catalogPump, 250);
+assert(catalogRangeStatus.above && catalogRangeStatus.outside, "flow above entered catalog range should be flagged");
+const catalogExtrapDuty = computeDuty({
+  ...baseState,
+  sys: { ...baseState.sys, Zs: 0, Zd: 5, Ds: 250, Ls: 0, Dd: 250, Ld: 1, fitS: [], fitD: [] },
+  pump: {
+    ...referencePump,
+    useCatalog: true,
+    arrangement: "single",
+    nPumps: 1,
+    catalog: [
+      { q: 0, h: 40, eta: 0, npshr: 2 },
+      { q: 80, h: 34, eta: 0.78, npshr: 2.5 },
+      { q: 120, h: 30, eta: 0.70, npshr: 3.0 },
+    ],
+  },
+});
+assert(catalogExtrapDuty.catalogExtrapolated && catalogExtrapDuty.catalogExtrap.above, "duty beyond entered catalog flow range should be returned as a calculation flag");
 assertNear(PM.motorSelection(12).selected_kW, 15, 1e-12, "motor selection should choose next IEC kW size");
 assertNear(PM.motorSelection(12).selected_hp, 20, 1e-12, "motor selection should choose next NEMA hp size");
 assertNear(PM.motorSelection(0).selected_kW, 0, 1e-12, "zero-duty motor selection should stay zero");
