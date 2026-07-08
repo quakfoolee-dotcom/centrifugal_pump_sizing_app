@@ -23,6 +23,7 @@ Run from the repository root:
 npm run test
 npm run build:standalone
 npm run test:browser
+npm run verify:formulas
 ```
 
 The source smoke test executes:
@@ -37,6 +38,12 @@ The browser smoke test executes:
 node scripts/browser-smoke-test.mjs
 ```
 
+The first-principles formula verifier executes:
+
+```bash
+node scripts/verify-formulas.mjs
+```
+
 `npm run test:browser` requires a local Chrome or Edge executable. It serves the
 repo on an ephemeral localhost port and opens `Pump_Calculator_standalone.html`,
 so it does not depend on CDN access during the test.
@@ -46,6 +53,7 @@ so it does not depend on CDN access during the test.
 ```text
 smoke-test: duty solve, parallel case, and pipe helpers passed
 browser-smoke-test: tabs, metadata, case import/export, localStorage, units, and report print passed
+verify-formulas: all 82 first-principles checks passed
 ```
 
 Any thrown error means the smoke test failed. The error message names the
@@ -56,6 +64,7 @@ calculation or workflow assertion that failed.
 | Area | Smoke-test coverage |
 |---|---|
 | Units | SI to US and US to SI flow conversion, temperature conversion, and specific-energy conversion. |
+| Formula verification | Independent checks against exact unit definitions, Colebrook-White friction reference, published water-property data, hydraulic identities, affinity laws, catalog interpolation, motor sizing, pipe schedule dimensions, and ISO tolerance constants. |
 | Pipe hydraulics | Pipe velocity, Reynolds number, laminar/low-Re friction factor, transitional friction sanity, flow-regime labels, and hydraulic/brake power. |
 | System head | Static lift, vessel pressure head, zero-flow system head, and zero-flow NPSHa. |
 | Pump curve | Parametric shutoff/BEP head, BEP efficiency, NPSHr, affinity scaling, and catalog shutoff handling. |
@@ -89,7 +98,8 @@ calculation or workflow assertion that failed.
 - Cross-browser behavior beyond the local Chrome/Edge executable used by the
   browser smoke test.
 - Vendor-grade hydraulic validation against certified pump curves, HI charts, or
-  project specifications.
+  project specifications. The formula verifier checks many identities and
+  published reference values, but it is still not a certified pump selection.
 
 ## Related Commands
 
@@ -105,6 +115,7 @@ Recommended pre-commit QC:
 npm run test
 npm run build:standalone
 npm run test:browser
+npm run verify:formulas
 git diff --check
 ```
 

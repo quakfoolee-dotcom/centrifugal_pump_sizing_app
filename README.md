@@ -35,7 +35,13 @@ Optional maintenance commands:
 npm run test
 npm run build:standalone
 npm run test:browser
+npm run verify:formulas
 ```
+
+`verify:formulas` checks the calculation engine against first-principles
+references, including exact unit definitions, a Colebrook-White reference
+solver, published water-property values, hand-derived hydraulic identities, and
+published pipe/tolerance values.
 
 See `docs/smoke_test_matrix.md` for the smoke-test purpose, coverage matrix,
 expected pass output, and current gaps.
@@ -56,6 +62,7 @@ components/Calculator.jsx          Main calculator screen
 components/Report.jsx              Engineering report sheet
 components/Compare.jsx             Case comparison view
 scripts/smoke-test.mjs             No-dependency calculation smoke test
+scripts/verify-formulas.mjs        First-principles formula verification
 scripts/browser-smoke-test.mjs     Headless Chrome/Edge workflow smoke test
 scripts/build-standalone.mjs       Regenerates the offline standalone file
 ```

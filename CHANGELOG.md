@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.19] - 2026-07-08
+
+- Added `scripts/verify-formulas.mjs`, an 82-check first-principles formula verification script.
+- Added `npm run verify:formulas` and documented it in the README maintenance commands and project structure.
+- Extended the smoke-test matrix to include formula-verification purpose, command, expected output, coverage, and remaining limitations.
+- Bumped the shared app version to `0.10.19` and regenerated the standalone artifact.
+
 ## [0.10.18] - 2026-07-08
 
 - Added `npm run test:browser`, a headless Chrome/Edge workflow smoke test for the standalone app.

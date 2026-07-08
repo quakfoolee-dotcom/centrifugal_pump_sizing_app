@@ -25,6 +25,67 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.19 - First-Principles Formula Verification Script
+
+**Objective**
+
+Add an independent formula-verification command that checks the app's main
+engineering calculations against first-principles references, and document it as
+part of routine QC.
+
+**Before Fix**
+
+- The repository had source smoke tests and browser workflow smoke tests, but
+  no committed command dedicated to independent formula verification.
+- A local `scripts/verify-formulas.mjs` file existed but was untracked, so other
+  users could not run the same 82-check verification script from GitHub.
+- README and the smoke-test matrix did not list `npm run verify:formulas`.
+
+**After Fix**
+
+- Added `scripts/verify-formulas.mjs` to version control.
+- Added `npm run verify:formulas` to `package.json`.
+- Documented the verifier in README maintenance commands and project structure.
+- Extended `docs/smoke_test_matrix.md` with the formula-verification command,
+  expected pass output, coverage area, and remaining limitation that it is not
+  certified vendor pump validation.
+- Bumped the shared app version to `0.10.19` and regenerated the standalone app
+  artifact so the visible version remains aligned with the release history.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `Pump_Calculator_standalone.html`
+- `README.md`
+- `docs/engineering_change_record.md`
+- `docs/smoke_test_matrix.md`
+- `lib/caseLibrary.js`
+- `package.json`
+- `scripts/browser-smoke-test.mjs`
+- `scripts/smoke-test.mjs`
+- `scripts/verify-formulas.mjs`
+
+**QC Results**
+
+- `npm run verify:formulas` passed.
+- `npm run test` passed.
+- `npm run build:standalone` passed.
+- `npm run test:browser` passed.
+- `git diff --check` passed.
+
+**Remaining Risk**
+
+The verifier checks equations, identities, published reference values, and
+selected integrated duty-solution consistency. It does not replace validation
+against certified vendor curves, HI chart calibration for viscosity correction,
+project specifications, or visual/browser print-preview review.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.18 - Browser Workflow Smoke Test And Import/Print Hardening
 
 **Objective**

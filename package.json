@@ -2,6 +2,7 @@
   "scripts": {
     "test": "node scripts/smoke-test.mjs",
     "test:browser": "node scripts/browser-smoke-test.mjs",
+    "verify:formulas": "node scripts/verify-formulas.mjs",
     "build:standalone": "node scripts/build-standalone.mjs"
   },
   "devDependencies": {}
