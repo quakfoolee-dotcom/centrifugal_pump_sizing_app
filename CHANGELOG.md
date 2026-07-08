@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.3] - 2026-07-08
+
+- Corrected catalog-curve fitting so valid zero-flow shutoff head points are included in the pump head model.
+- Corrected low-Re laminar friction-factor handling and viscous BEP flow/head reporting.
+- Added math QC coverage for unit conversions, pressure head, NPSHa, affinity scaling, pump arrangements, power, and catalog-curve edge cases.
+
 ## [0.10.2] - 2026-07-08
 
 - Removed the default preparer name from the report header and cleared matching legacy autosave metadata.

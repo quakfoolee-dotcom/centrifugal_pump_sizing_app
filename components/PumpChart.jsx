@@ -67,7 +67,7 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
   const _qMul = arrange === "parallel" ? nSet : 1;
   const _hMul = arrange === "series" ? nSet : 1;
   const catPts = (pump.useCatalog && Array.isArray(pump.catalog))
-    ? pump.catalog.filter(r => r.q > 0 && Number.isFinite(r.h)).map(r => ({ q: r.q * _Qs * _qMul, h: r.h * _Hs * _hMul }))
+    ? pump.catalog.filter(r => Number.isFinite(r.q) && r.q >= 0 && Number.isFinite(r.h)).map(r => ({ q: r.q * _Qs * _qMul, h: r.h * _Hs * _hMul }))
     : [];
 
   // Gridlines — left axis in 10m ticks
