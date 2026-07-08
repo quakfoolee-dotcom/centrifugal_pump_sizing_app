@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.17] - 2026-07-08
+
+- Fixed standalone build idempotency by preserving only offline `@font-face` blocks from the previous wrapper before appending fresh app CSS.
+- Added a smoke-test matrix document covering purpose, command, expected output, coverage areas, and known gaps.
+- Added smoke-test coverage to catch duplicate standalone app CSS header accumulation.
+- Updated README maintenance documentation and bumped the shared app version to `0.10.17`.
+
 ## [0.10.16] - 2026-07-08
 
 - Renamed the global print control to `Print Report / PDF` so it is clear that it intentionally prints the engineering report sheet from any active tab.

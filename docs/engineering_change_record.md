@@ -25,6 +25,66 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.17 - Standalone Build Idempotency And Smoke Test Matrix
+
+**Objective**
+
+Fix the standalone build so it can be rerun without dirtying the repository, and
+document the smoke-test purpose, command, coverage areas, expected output, and
+known test gaps.
+
+**Before Fix**
+
+- `npm run build:standalone` preserved all text before the first `:root` in the
+  previous standalone style block.
+- That preserved old app CSS header comments along with offline font assets, so
+  each build could add another duplicate `Centrifugal Pump Calculator` comment
+  to `Pump_Calculator_standalone.html`.
+- The smoke test was only partly documented through README command notes,
+  release records, and the source assertions in `scripts/smoke-test.mjs`.
+
+**After Fix**
+
+- Updated the standalone builder to preserve only actual offline `@font-face`
+  blocks from the previous wrapper before appending fresh app CSS.
+- Regenerated `Pump_Calculator_standalone.html` from the fixed builder.
+- Added smoke-test coverage to catch duplicate standalone app CSS header
+  accumulation.
+- Added `docs/smoke_test_matrix.md` with purpose, command, expected pass output,
+  coverage matrix, known gaps, and recommended pre-commit QC commands.
+- Linked the smoke-test matrix from `README.md`.
+- Bumped the shared app version to `0.10.17`.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `Pump_Calculator_standalone.html`
+- `README.md`
+- `docs/engineering_change_record.md`
+- `docs/smoke_test_matrix.md`
+- `lib/caseLibrary.js`
+- `scripts/build-standalone.mjs`
+- `scripts/smoke-test.mjs`
+
+**QC Results**
+
+- `npm run build:standalone` passed.
+- Reran `npm run build:standalone` and confirmed it produced no new git diff.
+- `npm run test` passed after rebuilding the standalone artifact.
+- `git diff --check` passed with line-ending warnings only.
+
+**Remaining Risk**
+
+The smoke test remains a fast source-level regression check. It does not perform
+full browser interaction, localStorage reload validation, visual chart
+inspection, or browser print-preview/PDF validation.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.16 - Report Print Label Clarification
 
 **Objective**

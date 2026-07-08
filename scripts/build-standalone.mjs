@@ -35,12 +35,12 @@ if (!manifestMatch || !templateMatch) {
 const manifest = JSON.parse(manifestMatch[1]);
 const oldTemplate = JSON.parse(templateMatch[1]);
 const oldStyle = oldTemplate.match(/<style>([\s\S]*?)<\/style>/i)?.[1] || "";
-const rootIndex = oldStyle.indexOf(":root {");
-const fontFaceCss = rootIndex >= 0 ? oldStyle.slice(0, rootIndex).trimEnd() : "";
+const fontFaceCss = Array.from(oldStyle.matchAll(/@font-face\s*\{[\s\S]*?\}/g), match => match[0])
+  .join("\n\n");
 const appCss = readFileSync("styles.css", "utf8")
   .replace(/@import\s+url\([^)]+\);\s*/g, "")
   .trimStart();
-const css = `${fontFaceCss}\n\n${appCss}`;
+const css = [fontFaceCss, appCss].filter(Boolean).join("\n\n");
 
 let templateHtml = readFileSync(appPath, "utf8");
 templateHtml = templateHtml.replace(

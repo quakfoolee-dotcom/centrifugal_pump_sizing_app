@@ -78,7 +78,7 @@ const baseState = {
   op: { Q: 110 },
 };
 
-assert(PumpCases.APP_VERSION === "0.10.16", "app version helper should match this release");
+assert(PumpCases.APP_VERSION === "0.10.17", "app version helper should match this release");
 const editedState = {
   ...baseState,
   meta: { ...baseState.meta, tag: "LIVE-EDIT", docNo: "" },
@@ -119,6 +119,9 @@ assert(!appHtml.includes("meta?.docNo || \"CAL-HYD-0142\""), "status bar should 
 const appCss = readFileSync("styles.css", "utf8");
 assert(appCss.includes("@media print"), "print stylesheet should be present");
 assert(appCss.includes(".view[data-screen-label=\"02 Report\"]"), "print stylesheet should force the report view");
+const standaloneHtml = readFileSync("Pump_Calculator_standalone.html", "utf8");
+const standaloneHeaderCount = (standaloneHtml.match(/Centrifugal Pump Calculator/g) || []).length;
+assert(standaloneHeaderCount <= 1, "standalone build should not accumulate duplicate app CSS header comments");
 
 const US = makeUnits("US");
 assertNear(US.conv("flow", 1), 4.402868, 1e-6, "m3/h to gpm conversion");

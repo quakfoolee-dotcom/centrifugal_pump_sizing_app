@@ -36,6 +36,9 @@ npm run test
 npm run build:standalone
 ```
 
+See `docs/smoke_test_matrix.md` for the smoke-test purpose, coverage matrix,
+expected pass output, and current gaps.
+
 ## Project Structure
 
 ```
