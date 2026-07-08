@@ -23,7 +23,7 @@
 <script type="text/babel" src="components/Compare.jsx"></script>
 
 <script type="text/babel">
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "density": "airy",
@@ -84,11 +84,64 @@ const initialState = {
   op: { Q: 110 },
 };
 
+const CASE_SCHEMA = "pumpcalc.case.v1";
+const CASE_LIBRARY_SCHEMA = "pumpcalc.cases.v1";
+
+function cleanReportMeta(meta = {}) {
+  const next = { ...meta };
+  if (next.preparedBy === "J. Rivera") {
+    next.preparedBy = "";
+    next.discipline = "";
+  }
+  return next;
+}
+
+function mergeState(base, saved) {
+  const src = saved || {};
+  return {
+    ...base,
+    ...src,
+    pump: { ...base.pump, ...(src.pump || {}) },
+    sys:  { ...base.sys,  ...(src.sys  || {}) },
+    design: { ...base.design, ...(src.design || {}) },
+    econ: { ...base.econ, ...(src.econ || {}) },
+    meta: { ...base.meta, ...cleanReportMeta(src.meta || {}) },
+  };
+}
+
+function safeFilename(value, fallback = "pump_case") {
+  const clean = String(value || "").trim()
+    .replace(/[^A-Za-z0-9._-]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return clean || fallback;
+}
+
+function uniqueCaseName(base, existing) {
+  const root = String(base || "Imported case").trim() || "Imported case";
+  if (!existing[root]) return root;
+  let i = 2;
+  while (existing[`${root} (${i})`]) i += 1;
+  return `${root} (${i})`;
+}
+
+function downloadJson(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 function App() {
   const [state, setState] = useState(initialState);
   const [view, setView] = useState("calc");        // calc | report
   const [density, setDensity] = useState(TWEAK_DEFAULTS.density);
   const [tweaksOn, setTweaksOn] = useState(false);
+  const importRef = useRef(null);
 
   useEffect(() => { document.documentElement.dataset.density = density; document.body.dataset.density = density; }, [density]);
 
@@ -96,19 +149,7 @@ function App() {
     try {
       const saved = JSON.parse(localStorage.getItem("pumpcalc:v4") || "null");
       if (saved) {
-        const savedMeta = { ...(saved.meta || {}) };
-        if (savedMeta.preparedBy === "J. Rivera") {
-          savedMeta.preparedBy = "";
-          savedMeta.discipline = "";
-        }
-        setState(s => ({
-        ...s, ...saved,
-        pump: { ...s.pump, ...(saved.pump || {}) },
-        sys:  { ...s.sys,  ...(saved.sys  || {}) },
-        design: { ...s.design, ...(saved.design || {}) },
-        econ: { ...s.econ, ...(saved.econ || {}) },
-        meta: { ...s.meta, ...savedMeta },
-      }));
+        setState(s => mergeState(s, saved));
       }
       const savedView = localStorage.getItem("pumpcalc:view");
       if (savedView) setView(savedView);
@@ -144,8 +185,71 @@ function App() {
     writeCases({ ...cases, [name]: state });
     setCaseName(name);
   };
-  const loadCase = (name) => { if (cases[name]) setState(cases[name]); setCaseName(name); };
+  const loadCase = (name) => { if (cases[name]) setState(mergeState(initialState, cases[name])); setCaseName(name); };
   const delCase = (name) => { const n = { ...cases }; delete n[name]; writeCases(n); if (caseName === name) setCaseName(""); };
+  const exportCase = () => {
+    const selectedName = cases[caseName] ? caseName : "";
+    const name = selectedName || (caseName || state.meta?.tag || state.meta?.docNo || "Current case").trim();
+    const caseState = selectedName ? cases[selectedName] : state;
+    downloadJson(`${safeFilename(name)}.pumpcase.json`, {
+      schema: CASE_SCHEMA,
+      version: 1,
+      name,
+      exportedAt: new Date().toISOString(),
+      state: caseState,
+    });
+  };
+  const exportCaseLibrary = () => {
+    downloadJson("pumpcalc_cases.json", {
+      schema: CASE_LIBRARY_SCHEMA,
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      cases,
+    });
+  };
+  const importCaseFile = (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const payload = JSON.parse(reader.result);
+        if (payload.schema === CASE_SCHEMA || payload.state || (payload.pump && payload.sys)) {
+          const imported = mergeState(initialState, payload.state || payload);
+          const baseName = payload.name || imported.meta?.tag || file.name.replace(/\.json$/i, "") || "Imported case";
+          const name = uniqueCaseName(baseName, cases);
+          const next = { ...cases, [name]: imported };
+          writeCases(next);
+          setCaseName(name);
+          setState(imported);
+          return;
+        }
+        const rawCases = payload.schema === CASE_LIBRARY_SCHEMA
+          ? payload.cases
+          : (payload.cases && typeof payload.cases === "object" ? payload.cases : payload);
+        if (!rawCases || typeof rawCases !== "object" || Array.isArray(rawCases)) {
+          throw new Error("JSON does not contain a case or case library.");
+        }
+        const next = { ...cases };
+        let firstName = "";
+        for (const [rawName, rawState] of Object.entries(rawCases)) {
+          if (!rawState || typeof rawState !== "object") continue;
+          const name = uniqueCaseName(rawName || "Imported case", next);
+          next[name] = mergeState(initialState, rawState);
+          if (!firstName) firstName = name;
+        }
+        if (!firstName) throw new Error("No valid cases were found.");
+        writeCases(next);
+        setCaseName(firstName);
+        setState(next[firstName]);
+      } catch (err) {
+        alert(`Could not import case JSON: ${err.message}`);
+      } finally {
+        event.target.value = "";
+      }
+    };
+    reader.readAsText(file);
+  };
 
   return (
     <div>
@@ -185,6 +289,10 @@ function App() {
             <input className="case-name" placeholder="name" value={caseName}
                    onChange={e => setCaseName(e.target.value)} />
             <button className="btn" onClick={saveCase}>Save</button>
+            <button className="btn" onClick={exportCase} title="export current or selected case as JSON">Export</button>
+            <button className="btn" onClick={exportCaseLibrary} disabled={!Object.keys(cases).length} title="export saved case library as JSON">All</button>
+            <button className="btn" onClick={() => importRef.current && importRef.current.click()} title="import case JSON">Import</button>
+            <input ref={importRef} type="file" accept="application/json,.json" onChange={importCaseFile} style={{display:"none"}} />
             {cases[caseName] && <button className="btn" onClick={() => delCase(caseName)} title="delete case">✕</button>}
           </div>
           <span><span className="dot" />autosave</span>

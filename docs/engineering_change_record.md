@@ -25,6 +25,64 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.14 - Report Metadata And Case Portability
+
+**Objective**
+
+Make engineering reports project-specific without source edits and make saved
+cases portable outside browser localStorage.
+
+**Before Fix**
+
+- Report metadata fields existed in `state.meta` and were used by the report
+  titleblock, but the calculator had no UI to edit Project, Tag, Doc No.,
+  Revision, Prepared By, or Discipline.
+- Saved cases were stored only in browser localStorage under `pumpcalc:cases`.
+- There was no JSON export/import path for handing one case to a colleague or
+  backing up the saved-case library.
+
+**After Fix**
+
+- Added a Report metadata section to the calculator input panel.
+- Updated the live chart header to use the editable report tag.
+- Added JSON export for the current/selected case.
+- Added JSON export for the saved-case library.
+- Added JSON import for single-case files, raw state JSON, and case-library
+  JSON files.
+- Normalized imported and older saved cases against current defaults so newly
+  added fields are preserved.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `Pump_Calculator.html`
+- `Pump_Calculator_standalone.html`
+- `README.md`
+- `components/Calculator.jsx`
+- `docs/engineering_change_record.md`
+- `styles.css`
+
+**QC Results**
+
+- `npm run test` passed.
+- `npm run build:standalone` passed.
+- `git diff --check` passed with line-ending warnings only.
+- Source review confirmed report metadata fields update `state.meta`.
+- Source review confirmed case import handles single-case, raw-state, and
+  library JSON payloads.
+
+**Remaining Risk**
+
+Case JSON is intentionally plain and user-editable. Invalid or manually edited
+files can still be rejected during import; the app reports a browser alert when
+the JSON cannot be parsed or does not contain valid case data.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.13 - Catalog Auxiliary QC And VFD Status
 
 **Objective**

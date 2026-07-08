@@ -29,6 +29,18 @@ const Field = ({ label, sub, value, unit, qty = "none", onChange, step = 1, min,
   );
 };
 
+const TextField = ({ label, sub, value, onChange, placeholder = "" }) => (
+  <div className="field text-field">
+    <div className="name">{label}{sub ? <span className="sub">{sub}</span> : null}</div>
+    <input
+      type="text"
+      value={value || ""}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  </div>
+);
+
 const Slider = ({ label, value, onChange, min, max, step, fmt, unit }) => (
   <div className="slider-row">
     <div className="top">
@@ -94,10 +106,12 @@ const PipePicker = ({ id_mm, onPick }) => {
 };
 
 const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSystem || "SI");
-  const { fluid, sys, pump, op } = state;
+  const { fluid, sys, pump, op, meta = {} } = state;
 
   const set = (group) => (patch) =>
     setState(s => ({ ...s, [group]: { ...s[group], ...patch } }));
+  const setMeta = (patch) =>
+    setState(s => ({ ...s, meta: { ...s.meta, ...patch } }));
 
   // Manual edit of a fluid property drops the preset link -> switch to Custom.
   const setFluidProp = (patch) =>
@@ -205,6 +219,16 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         <div className="panel-header">
           <h3>System · Inputs</h3>
           <span className="badge">SI</span>
+        </div>
+
+        <div className="section">
+          <div className="section-title"><span>Report metadata</span><span className="hint">titleblock</span></div>
+          <TextField label="Project" value={meta.project} onChange={v => setMeta({ project: v })}/>
+          <TextField label="Tag" value={meta.tag} onChange={v => setMeta({ tag: v })}/>
+          <TextField label="Doc No." value={meta.docNo} onChange={v => setMeta({ docNo: v })}/>
+          <TextField label="Revision" value={meta.rev} onChange={v => setMeta({ rev: v })}/>
+          <TextField label="Prepared by" value={meta.preparedBy} onChange={v => setMeta({ preparedBy: v })}/>
+          <TextField label="Discipline" value={meta.discipline} onChange={v => setMeta({ discipline: v })}/>
         </div>
 
         <div className="section">
@@ -394,7 +418,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         <div className="center-header">
           <div className="title-group">
             <h2>Performance · Pump &amp; System</h2>
-            <span className="meta">TAG  P-101A  ·  {fluidName}  ·  {arrange === "single" ? "1 pump" : `${nSet}× ${arrange}`}  ·  N={pump.N} rpm  ·  D={pump.D} mm</span>
+            <span className="meta">TAG  {meta.tag || "P-101A"}  ·  {fluidName}  ·  {arrange === "single" ? "1 pump" : `${nSet}× ${arrange}`}  ·  N={pump.N} rpm  ·  D={pump.D} mm</span>
           </div>
           <div className="legend">
             <span><span className="sw" style={{borderColor:"var(--ink)"}}></span>H(Q)</span>

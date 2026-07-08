@@ -134,6 +134,7 @@ body {
 .case-sel { cursor: pointer; }
 .case-name { width: 84px; }
 .case-name:focus, .case-sel:focus { outline: none; border-color: var(--accent); background: #fff; }
+.cases .btn { padding: 4px 7px; font-size: 10px; }
 
 /* SI/US unit toggle in top bar */
 .unit-seg { width: 68px; height: 24px; }
@@ -209,6 +210,8 @@ body {
 .field input:hover { border-color: var(--rule-faint); }
 .field input:focus { border-color: var(--accent); background: #fff; }
 .field.locked input { background: transparent; color: var(--mute); }
+.text-field { grid-template-columns: minmax(0, 1fr) minmax(120px, 1.35fr); }
+.text-field input { text-align: left; }
 
 /* Catalog point editor */
 .cat-in {

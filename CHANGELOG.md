@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.14] - 2026-07-08
+
+- Added editable report metadata fields for Project, Tag, Doc No., Revision, Prepared By, and Discipline.
+- Added JSON export/import for individual cases and JSON export/import support for saved case libraries.
+- Normalized imported and older saved cases against current defaults so newer fields are preserved safely.
+- Updated the live chart header, README, engineering change record, and standalone build for the report/case workflow.
+
 ## [0.10.13] - 2026-07-08
 
 - Added catalog auxiliary-data flags when a head catalog is present but efficiency or NPSHr points are estimated.
