@@ -1,6 +1,6 @@
 # Centrifugal Pump Sizing App
 
-Static, engineer-grade centrifugal pump sizing calculator built as a single-page browser app — no build step, no server. Open `Pump Calculator.html` (multi-file, for development) or `Pump Calculator (standalone).html` (single self-contained offline file).
+Static, engineer-grade centrifugal pump sizing calculator built as a single-page browser app. Open `index.html` or `Pump Calculator.html` for the multi-file app, or `Pump Calculator (standalone).html` for the single self-contained offline file.
 
 ## What It Does
 
@@ -29,21 +29,32 @@ python3 -m http.server 8000
 
 For a no-setup, offline copy, open `Pump Calculator (standalone).html` — everything is inlined into one file.
 
+Optional maintenance commands:
+
+```bash
+npm run test
+npm run build:standalone
+```
+
 ## Project Structure
 
 ```
+index.html                         Root redirect for GitHub Pages
 Pump Calculator.html               Main app (loads the modules below)
 Pump Calculator (standalone).html  Single self-contained build (offline)
 styles.css                         CAD / engineering styling
 lib/pumpMath.js                    Pump hydraulics engine (SI internally)
 lib/units.js                       SI <-> US display-layer conversion
+lib/duty.js                        Shared duty-point/result derivation
 components/PumpChart.jsx            SVG performance chart
 components/Calculator.jsx          Main calculator screen
 components/Report.jsx              Engineering report sheet
 components/Compare.jsx             Case comparison view
+scripts/smoke-test.mjs             No-dependency calculation smoke test
+scripts/build-standalone.mjs       Regenerates the offline standalone file
 ```
 
-React + Babel load from CDN at runtime, so the `.jsx` files are transpiled in the browser — there is no bundler and no `node_modules`.
+React + Babel load from CDN at runtime, so the `.jsx` files are transpiled in the browser. The Node scripts are only for smoke testing and refreshing the standalone offline artifact.
 
 ## Engineering Methods
 

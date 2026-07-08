@@ -2,42 +2,16 @@
 
 // Duty metrics for a full state snapshot (all SI internally).
 window.pumpMetrics = function (state) {
-  const pm = window.PumpMath;
-  const { sys, pump, op, fluid } = state;
-  const sumKs = pm.sumK(sys.fitS), sumKd = pm.sumK(sys.fitD);
-  const sysEff = { ...sys, Ks: sumKs, Kd: sumKd };
-  const effPump = pm.withViscosity(pump, sys.mu);
-  const nSet = pm.nP(pump), arrange = pm.arr(pump);
-  const opH = pm.combinedH(op.Q, effPump);
-  const opEta = pm.combinedEta(op.Q, effPump);
-  const opNPSHr = pm.combinedNPSHr(op.Q, effPump);
-  const opNPSHa = pm.npshAvailable(op.Q, sysEff);
-  const perQ = pm.perPumpQ(op.Q, effPump);
-  const perH = arrange === "series" ? pm.pumpH(op.Q, effPump) : opH;
-  const Phyd = pm.hydraulicPower(op.Q, opH, sys.rho);
-  const PbrakePer = pm.brakePower(perQ, perH, sys.rho, opEta);
-  const Pbrake = PbrakePer * nSet;
-  const motorEff = 0.93, Pmotor = Pbrake / motorEff;
-  const staticLift = pm.staticLift(sysEff), presHead = pm.pressureHead(sysEff);
-  const hfS = pm.frictionHead(op.Q, sys.Ls, sys.Ds, sys.eps, sys.rho, sys.mu, sumKs);
-  const hfD = pm.frictionHead(op.Q, sys.Ld, sys.Dd, sys.eps, sys.rho, sys.mu, sumKd);
-  const TDH = staticLift + presHead + hfS + hfD;
-  const Nss = pm.suctionSpecificSpeed(effPump);
-  const Ns = pm.specificSpeed(pump.N, perQ, perH);
-  const npshRatio = pump.npshRatio || 1.3;
-  const ratio = opNPSHr > 0 ? opNPSHa / opNPSHr : 99;
-  const margin = opNPSHa - opNPSHr;
-  const cavOk = ratio >= npshRatio && margin >= 0.6;
-  const bepQ = pm.combinedBEPflow(effPump);
-  const bepPct = bepQ > 0 ? (op.Q / bepQ) * 100 : 0;
-  const econ = state.econ || { hours: 8000, price: 0.12 };
-  const en = pm.energy(Pbrake, motorEff, econ.hours, econ.price, op.Q);
+  const { pump, fluid } = state;
+  const duty = window.computeDuty(state);
   const fluidName = fluid.key === "Custom" ? (fluid.customName || "Custom") : fluid.key;
   return {
-    Q: op.Q, H: opH, eta: opEta, Pbrake, Pmotor, opNPSHa, opNPSHr, margin, ratio,
-    cavOk, bepPct, TDH, Nss, Ns, N: pump.N, D: pump.D, arrange, nSet,
-    kWh: en.kWhPerYear, cost: en.costPerYear, spec: en.specific_kWh_m3,
-    fluidName, npshRatio,
+    Q: duty.dutyQ, H: duty.opH, eta: duty.opEta, Pbrake: duty.Pbrake, Pmotor: duty.Pmotor,
+    opNPSHa: duty.opNPSHa, opNPSHr: duty.opNPSHr, margin: duty.margin, ratio: duty.ratioActual,
+    cavOk: duty.cavOk, bepPct: duty.bepPct, TDH: duty.TDH, Nss: duty.Nss, Ns: duty.Ns,
+    N: pump.N, D: pump.D, arrange: duty.arrange, nSet: duty.nSet,
+    kWh: duty.en.kWhPerYear, cost: duty.en.costPerYear, spec: duty.en.specific_kWh_m3,
+    fluidName, npshRatio: duty.npshRatio, Qmax: duty.Qmax,
   };
 };
 
@@ -63,6 +37,7 @@ const Compare = ({ liveState, cases, unitSystem }) => {
 
   const states = sel.map(n => options[n]).filter(Boolean);
   const metrics = states.map(st => window.pumpMetrics(st));
+  const duties = states.map(st => window.computeDuty(st));
 
   const COLORS = ["var(--ink)", "var(--accent)", "var(--cool)"];
 
@@ -116,17 +91,16 @@ const Compare = ({ liveState, cases, unitSystem }) => {
   // ---- overlay chart -----------------------------------------------------
   const W = 760, Hc = 300, M = { l: 52, r: 20, t: 16, b: 38 };
   const iw = W - M.l - M.r, ih = Hc - M.t - M.b;
-  const QmaxSI = Math.max(...states.map(st => 220 * (pm.arr(st.pump) === "parallel" ? pm.nP(st.pump) : 1)));
-  const HmaxSI = Math.max(...states.map(st => pm.combinedShutoff(pm.withViscosity(st.pump, st.sys.mu)))) * 1.1;
+  const QmaxSI = Math.max(20, ...duties.map(d => d.Qmax || 0));
+  const HmaxSI = Math.max(10, ...duties.map(d => pm.combinedShutoff(d.effPump))) * 1.1;
   const sx = q => M.l + (q / QmaxSI) * iw;
   const syH = h => M.t + ih - (h / HmaxSI) * ih;
   const N = 60;
   const curveFor = (st, fn) => {
-    const eff = pm.withViscosity(st.pump, st.sys.mu);
-    const sysEff = { ...st.sys, Ks: pm.sumK(st.sys.fitS), Kd: pm.sumK(st.sys.fitD) };
+    const duty = window.computeDuty(st);
     return Array.from({ length: N + 1 }, (_, i) => {
       const q = (i / N) * QmaxSI;
-      return `${i === 0 ? "M" : "L"}${sx(q).toFixed(1)},${syH(fn(eff, sysEff, q)).toFixed(1)}`;
+      return `${i === 0 ? "M" : "L"}${sx(q).toFixed(1)},${syH(fn(duty.effPump, duty.sysEff, q)).toFixed(1)}`;
     }).join(" ");
   };
   const qTicks = []; for (let q = 0; q <= QmaxSI; q += (QmaxSI <= 250 ? 40 : 80)) qTicks.push(q);
@@ -222,9 +196,7 @@ const Compare = ({ liveState, cases, unitSystem }) => {
             <text x={12} y={M.t+ih/2} textAnchor="middle" transform={`rotate(-90 12 ${M.t+ih/2})`} fontFamily="var(--mono)" fontSize="9" fill="var(--ink-2)">H — {U.unit("head")}</text>
 
             {states.map((st, i) => {
-              const eff = pm.withViscosity(st.pump, st.sys.mu);
-              const sysEff = { ...st.sys, Ks: pm.sumK(st.sys.fitS), Kd: pm.sumK(st.sys.fitD) };
-              const cross = pm.operatingPointCombined(eff, sysEff, QmaxSI);
+              const cross = duties[i].dutyPoint;
               return (
                 <g key={i}>
                   <path d={curveFor(st, (e, s, q) => pm.combinedH(q, e))} fill="none" stroke={COLORS[i]} strokeWidth="1.6" />

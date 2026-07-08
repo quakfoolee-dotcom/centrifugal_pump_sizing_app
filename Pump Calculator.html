@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <title>Centrifugal Pump · Calculator</title>
-<meta name="viewport" content="width=1440" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -16,6 +16,7 @@
 
 <script src="lib/pumpMath.js"></script>
 <script src="lib/units.js"></script>
+<script src="lib/duty.js"></script>
 <script type="text/babel" src="components/PumpChart.jsx"></script>
 <script type="text/babel" src="components/Calculator.jsx"></script>
 <script type="text/babel" src="components/Report.jsx"></script>
@@ -70,6 +71,14 @@ const initialState = {
   },
   design: { flowMargin: 10, headMargin: 0 },
   econ: { hours: 8000, price: 0.12 },
+  meta: {
+    project: "Raw-Water Transfer Skid - Unit 200",
+    tag: "P-101A",
+    docNo: "CAL-HYD-0142",
+    rev: "D",
+    preparedBy: "J. Rivera",
+    discipline: "Mech.",
+  },
   unitSystem: "SI",
   op: { Q: 110 },
 };
@@ -91,6 +100,7 @@ function App() {
         sys:  { ...s.sys,  ...(saved.sys  || {}) },
         design: { ...s.design, ...(saved.design || {}) },
         econ: { ...s.econ, ...(saved.econ || {}) },
+        meta: { ...s.meta, ...(saved.meta || {}) },
       }));
       const savedView = localStorage.getItem("pumpcalc:view");
       if (savedView) setView(savedView);
@@ -136,7 +146,7 @@ function App() {
           <span className="brand-mark" />
           <div>
             <div className="brand-name">Centrifugal · Pump Sizing</div>
-            <div className="brand-sub mono">v0.9 — {state.unitSystem || "SI"}</div>
+            <div className="brand-sub mono">v0.10 — {state.unitSystem || "SI"}</div>
           </div>
         </div>
         <div className="topbar-tabs">
@@ -185,11 +195,11 @@ function App() {
       </div>
 
       <div className="status">
-        <span>DRW · CAL-HYD-0142</span><span className="sep">│</span>
-        <span>REV C</span><span className="sep">│</span>
+        <span>DRW · {state.meta?.docNo || "CAL-HYD-0142"}</span><span className="sep">│</span>
+        <span>REV {state.meta?.rev || "D"}</span><span className="sep">│</span>
         <span>SCALE — NTS</span><span className="sep">│</span>
         <span>SHEET 1/1</span><span className="sep">│</span>
-        <span>UNITS — SI</span><span className="sep">│</span>
+        <span>UNITS — {state.unitSystem || "SI"}</span><span className="sep">│</span>
         <span>ρ={state.sys.rho} kg/m³ · μ={state.sys.mu.toFixed(2)} cP</span>
       </div>
 

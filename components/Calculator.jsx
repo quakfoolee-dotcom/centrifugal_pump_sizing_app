@@ -103,77 +103,24 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
   const setFluidProp = (patch) =>
     setState(s => ({ ...s, fluid: { ...s.fluid, key: "Custom" }, sys: { ...s.sys, ...patch } }));
 
-  // Derived values at operating point
+  // Derived values at solved duty point
   const pm = window.PumpMath;
-  // Fittings -> ΣK, folded into an effective system object used everywhere.
-  const fitS = Array.isArray(sys.fitS) ? sys.fitS : [];
-  const fitD = Array.isArray(sys.fitD) ? sys.fitD : [];
-  const sumKs = pm.sumK(fitS);
-  const sumKd = pm.sumK(fitD);
-  const sysEff = { ...sys, Ks: sumKs, Kd: sumKd };
-  // Effective pump = reference pump with viscosity correction baked in.
-  const effPump = pm.withViscosity(pump, sys.mu);
-  const nSet = pm.nP(pump), arrange = pm.arr(pump);
-
-  // Combined-set values at the operating (total) flow
-  const opH = pm.combinedH(op.Q, effPump);
-  const opEta = pm.combinedEta(op.Q, effPump);
-  const opNPSHr = pm.combinedNPSHr(op.Q, effPump);
-  const opNPSHa = pm.npshAvailable(op.Q, sysEff);
-  // Per-pump duty split
-  const perQ = pm.perPumpQ(op.Q, effPump);
-  const perH = arrange === "series" ? pm.pumpH(op.Q, effPump) : opH;
-  const Phyd = pm.hydraulicPower(op.Q, opH, sys.rho);           // total hydraulic
-  const PbrakePer = pm.brakePower(perQ, perH, sys.rho, opEta);  // one pump
-  const Pbrake = PbrakePer * nSet;                              // total shaft
-  const motorEff = 0.93;
-  const Pmotor = Pbrake / motorEff; // total input
-  const Ns = pm.specificSpeed(pump.N, perQ, perH);
-  const Nss = pm.suctionSpecificSpeed(effPump);
-  const vSuction = pm.velocity(op.Q, sys.Ds);
-  const vDischarge = pm.velocity(op.Q, sys.Dd);
-  const hfSuction = pm.frictionHead(op.Q, sys.Ls, sys.Ds, sys.eps, sys.rho, sys.mu, sumKs);
-  const hfDischarge = pm.frictionHead(op.Q, sys.Ld, sys.Dd, sys.eps, sys.rho, sys.mu, sumKd);
-  const staticLift = pm.staticLift(sysEff);
-  const presHead = pm.pressureHead(sysEff);
-  const TDH = staticLift + presHead + hfSuction + hfDischarge;
-  const Re_s = pm.reynolds(vSuction, sys.Ds, sys.rho, sys.mu);
-
-  // Design margins -> rated point
-  const design = state.design || { flowMargin: 10, headMargin: 0 };
-  const ratedQ = op.Q * (1 + (design.flowMargin || 0) / 100);
-  const ratedHsys = pm.systemHead(ratedQ, sysEff) * (1 + (design.headMargin || 0) / 100);
-  const ratedLeftOfBEP = ratedQ <= pm.combinedBEPflow(effPump);
-
-  // VFD
-  const dutyHsys = pm.systemHead(op.Q, sysEff);
-  const speedForDuty = pm.speedForDuty(effPump, op.Q, dutyHsys);
-  const minVfd = pm.minVfdSpeed(effPump, sysEff);
-
-  // Energy / lifecycle
-  const econ = state.econ || { hours: 8000, price: 0.12 };
-  const en = pm.energy(Pbrake, motorEff, econ.hours, econ.price, op.Q);
-
-  // Viscosity correction factors (actual-frame BEP basis)
-  const bepQw = pm.bepFlow(pump);
-  const bepHw = pm.pumpH_water(bepQw, pump);
-  const visc = pm.viscosityCorrection(bepQw, bepHw, sys.mu);
-  const viscActive = visc.CH < 0.999 || visc.CQ < 0.999 || visc.Ceta < 0.999;
-
-  // NPSH margin — ratio-based (HI 9.6.1). Required ratio configurable.
-  const npshRatio = pump.npshRatio || 1.3;
-  const margin = opNPSHa - opNPSHr;
-  const ratioActual = opNPSHr > 0 ? opNPSHa / opNPSHr : 99;
-  const cavOk = ratioActual >= npshRatio && margin >= 0.6;
-
-  // BEP / operating-region checks (combined set)
-  const bepQ = pm.combinedBEPflow(effPump);
-  const bepPct = bepQ > 0 ? (op.Q / bepQ) * 100 : 0;
-  const qMin = pm.minFlow(effPump) * (arrange === "parallel" ? nSet : 1);
-  const belowMinFlow = op.Q < qMin;
-  const highSuctionEnergy = Nss > 213; // metric threshold ≈ 11000 US
-  const inPOR = bepPct >= 70 && bepPct <= 120;
-  const sN = pump.N / pump.N0, sD = pump.D / pump.D0;
+  const duty = window.computeDuty(state);
+  const {
+    fitS, fitD, sumKs, sumKd, sysEff, effPump, nSet, arrange,
+    dutyQ, dutyPoint, Qmax,
+    opH, opEta, opNPSHr, opNPSHa, perQ, perH,
+    Phyd, PbrakePer, Pbrake, Pmotor,
+    Ns, Nss, vSuction, vDischarge, hfSuction, hfDischarge,
+    staticLift, presHead, TDH, Re_s,
+    design, ratedQ, ratedHsys, ratedLeftOfBEP,
+    speedForDuty, minVfd,
+    econ, en,
+    visc, viscActive,
+    npshRatio, margin, ratioActual, cavOk,
+    bepQ, bepPct, qMin, belowMinFlow, highSuctionEnergy, inPOR,
+    sN, sD,
+  } = duty;
 
   // Catalog-point editor helpers
   const catalog = Array.isArray(pump.catalog) ? pump.catalog : [];
@@ -295,7 +242,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         <div className="section">
           <div className="section-title"><span>Suction line</span><span className="hint">ΣK {sumKs.toFixed(2)}</span></div>
           <PipePicker id_mm={sys.Ds} onPick={id => set("sys")({ Ds: id })} />
-          <Field label="Inside diameter" sub="D" value={sys.Ds} qty="dia" step={1} onChange={v => set("sys")({ Ds: v })}/>
+          <Field label="Inside diameter" sub="D" value={sys.Ds} qty="dia" step={1} min={1} onChange={v => set("sys")({ Ds: Number.isFinite(v) ? Math.max(1, v) : v })}/>
           <Field label="Length" sub="L" value={sys.Ls} qty="len" step={0.5} onChange={v => set("sys")({ Ls: v })}/>
           <FittingsTable list={fitS} onChange={(next) => set("sys")({ fitS: next })} />
         </div>
@@ -303,7 +250,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         <div className="section">
           <div className="section-title"><span>Discharge line</span><span className="hint">ΣK {sumKd.toFixed(2)}</span></div>
           <PipePicker id_mm={sys.Dd} onPick={id => set("sys")({ Dd: id })} />
-          <Field label="Inside diameter" sub="D" value={sys.Dd} qty="dia" step={1} onChange={v => set("sys")({ Dd: v })}/>
+          <Field label="Inside diameter" sub="D" value={sys.Dd} qty="dia" step={1} min={1} onChange={v => set("sys")({ Dd: Number.isFinite(v) ? Math.max(1, v) : v })}/>
           <Field label="Length" sub="L" value={sys.Ld} qty="len" step={0.5} onChange={v => set("sys")({ Ld: v })}/>
           <FittingsTable list={fitD} onChange={(next) => set("sys")({ fitD: next })} />
           <Field label="Pipe roughness" sub="ε" value={sys.eps} qty="dia" step={0.01} onChange={v => set("sys")({ eps: v })}/>
@@ -440,7 +387,8 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
             showSpeedFamily={!!pump.showSpeedFamily}
             tol={pm.TOLERANCES[pump.tolGrade || "ISO 2B"]}
             U={U}
-            Qmax={220 * (arrange === "parallel" ? nSet : 1)}
+            Qmax={Qmax}
+            dutyPoint={dutyPoint}
             setOp={(patch) => setState(s => ({ ...s, op: { ...s.op, ...patch } }))}
           />
         </div>
@@ -459,8 +407,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           <div style={{display:"flex", gap:8}}>
             <button className="btn" onClick={() => {
               // Snap op point to system intersection (duty point) — on the effective curve
-              const cross = pm.operatingPointCombined(effPump, sysEff, 220 * (arrange === "parallel" ? nSet : 1));
-              setState(s => ({ ...s, op: { ...s.op, Q: cross.Q || s.op.Q } }));
+              setState(s => ({ ...s, op: { ...s.op, Q: dutyPoint.Q || s.op.Q } }));
             }}>↳ Snap to duty</button>
             <button className="btn" onClick={() => {
               setState(s => ({ ...s, op: { ...s.op, Q: bepQ } }));
@@ -469,7 +416,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         </div>
 
         <div className="results-bar">
-          <div className="res-cell"><span className="k">Q</span><span className="v">{U.fmt("flow", op.Q, 1)}</span><span className="u">{U.unit("flow")}</span></div>
+          <div className="res-cell"><span className="k">Q</span><span className="v">{U.fmt("flow", dutyQ, 1)}</span><span className="u">{U.unit("flow")}</span></div>
           <div className="res-cell"><span className="k">H</span><span className="v">{U.fmt("head", opH, 2)}</span><span className="u">{U.unit("head")}</span></div>
           <div className="res-cell"><span className="k">η</span><span className="v">{(opEta*100).toFixed(1)}</span><span className="u">%</span></div>
           <div className="res-cell"><span className="k">P_hyd</span><span className="v">{U.fmt("power", Phyd, 2)}</span><span className="u">{U.unit("power")}</span></div>
@@ -492,7 +439,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
       {/* ---- RIGHT : derived ---- */}
       <div className="panel">
         <div className="panel-header">
-          <h3>Derived · At operating point</h3>
+          <h3>Derived · At duty point</h3>
           <span className="badge">live</span>
         </div>
 
@@ -517,7 +464,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
 
         <div className="section">
           <div className="section-title"><span>Duty vs rated</span><span className="hint">+{design.flowMargin}% Q / +{design.headMargin}% H</span></div>
-          <KV k="Duty flow"    v={U.fmt("flow", op.Q, 1)}     u={U.unit("flow")} />
+          <KV k="Duty flow"    v={U.fmt("flow", dutyQ, 1)}    u={U.unit("flow")} />
           <KV k="Rated flow"   v={U.fmt("flow", ratedQ, 1)}   u={U.unit("flow")} />
           <KV k="Rated head"   v={U.fmt("head", ratedHsys, 2)} u={U.unit("head")} />
           <div className="kv"><span className="k">Rated vs BEP</span><span className="v" style={{color: ratedLeftOfBEP ? "var(--ok)" : "var(--warn)"}}>{ratedLeftOfBEP ? "left of BEP ✓" : "right of BEP"}</span><span className="u"></span></div>
@@ -559,7 +506,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           <KV k="CQ · flow"        v={visc.CQ.toFixed(3)} u="×" />
           <KV k="CH · head"        v={visc.CH.toFixed(3)} u="×" />
           <KV k="Cη · efficiency"  v={visc.Ceta.toFixed(3)} u="×" />
-          <KV k="η (water → visc)" v={`${(pm.pumpEta(op.Q,pump)*100).toFixed(1)} → ${(opEta*100).toFixed(1)}`} u="%" />
+          <KV k="η (water → visc)" v={`${(pm.pumpEta(perQ,pump)*100).toFixed(1)} → ${(opEta*100).toFixed(1)}`} u="%" />
         </div>
 
         <div style={{padding:"10px var(--pad) 16px", color:"var(--mute)", fontSize:11, lineHeight:1.5}}>

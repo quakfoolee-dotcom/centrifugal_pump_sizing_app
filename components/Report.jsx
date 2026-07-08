@@ -4,52 +4,36 @@ const Report = ({ state }) => {
   const { fluid, sys, pump, op } = state;
   const pm = window.PumpMath;
   const U = window.makeUnits(state.unitSystem || "SI");
-  const uh = U.unit("head"), uf = U.unit("flow"), up = U.unit("power"), upr = U.unit("press"), ud = U.unit("dia"), ul = U.unit("len");
-  const sumKs = pm.sumK(sys.fitS);
-  const sumKd = pm.sumK(sys.fitD);
-  const sysEff = { ...sys, Ks: sumKs, Kd: sumKd };
-  const effPump = pm.withViscosity(pump, sys.mu);
-  const nSet = pm.nP(pump), arrange = pm.arr(pump);
-
-  const opH = pm.combinedH(op.Q, effPump);
-  const opEta = pm.combinedEta(op.Q, effPump);
-  const opNPSHr = pm.combinedNPSHr(op.Q, effPump);
-  const opNPSHa = pm.npshAvailable(op.Q, sysEff);
-  const perQ = pm.perPumpQ(op.Q, effPump);
-  const perH = arrange === "series" ? pm.pumpH(op.Q, effPump) : opH;
-  const Phyd = pm.hydraulicPower(op.Q, opH, sys.rho);
-  const PbrakePer = pm.brakePower(perQ, perH, sys.rho, opEta);
-  const Pbrake = PbrakePer * nSet;
-  const motorEff = 0.93;
-  const Pmotor = Pbrake / motorEff;
-  const hfS = pm.frictionHead(op.Q, sys.Ls, sys.Ds, sys.eps, sys.rho, sys.mu, sumKs);
-  const hfD = pm.frictionHead(op.Q, sys.Ld, sys.Dd, sys.eps, sys.rho, sys.mu, sumKd);
-  const staticLift = pm.staticLift(sysEff);
-  const presHead = pm.pressureHead(sysEff);
-  const TDH = staticLift + presHead + hfS + hfD;
-  const Ns = pm.specificSpeed(pump.N, op.Q, opH);
-  const Nss = pm.suctionSpecificSpeed(effPump);
-  const npshRatio = pump.npshRatio || 1.3;
-  const ratioActual = opNPSHr > 0 ? opNPSHa / opNPSHr : 99;
-  const margin = opNPSHa - opNPSHr;
-  const cavOk = ratioActual >= npshRatio && margin >= 0.6;
-  const qMin = pm.minFlow(effPump) * (arrange === "parallel" ? nSet : 1);
-  const bepQ = pm.combinedBEPflow(effPump);
-  const bepPct = bepQ > 0 ? (op.Q / bepQ) * 100 : 0;
-  const econ = state.econ || { hours: 8000, price: 0.12 };
-  const en = pm.energy(Pbrake, motorEff, econ.hours, econ.price, op.Q);
+  const uh = U.unit("head"), uf = U.unit("flow"), up = U.unit("power"), upr = U.unit("press"), ud = U.unit("dia");
+  const duty = window.computeDuty(state);
+  const {
+    sumKs, sumKd, sysEff, effPump, nSet, arrange,
+    dutyQ, dutyPoint, Qmax,
+    opH, opEta, opNPSHr, opNPSHa,
+    Phyd, PbrakePer, Pbrake, Pmotor,
+    Ns, Nss, hfSuction: hfS, hfDischarge: hfD,
+    staticLift, presHead, TDH,
+    design, ratedQ, ratedHsys: ratedH,
+    en,
+    visc, viscActive,
+    npshRatio, margin, ratioActual, cavOk,
+    bepPct, qMin,
+  } = duty;
   const pipeS = pm.nearestPipe(sys.Ds);
   const pipeD = pm.nearestPipe(sys.Dd);
   const fmtPipe = (p, id) => p ? `DN${p.dn} Sch${p.sch} (${U.fmt("dia", id, 1)} ${ud})` : `${U.fmt("dia", id, 1)} ${ud}`;
   const tol = pm.TOLERANCES[pump.tolGrade || "ISO 2B"];
-  const design = state.design || { flowMargin: 10, headMargin: 0 };
-  const ratedQ = op.Q * (1 + (design.flowMargin || 0) / 100);
-  const ratedH = pm.systemHead(ratedQ, sysEff) * (1 + (design.headMargin || 0) / 100);
-  const viscBEP = pm.bepFlow(pump);
-  const visc = pm.viscosityCorrection(viscBEP, pm.pumpH_water(viscBEP, pump), sys.mu);
-  const viscActive = visc.CH < 0.999 || visc.Ceta < 0.999;
+  const meta = {
+    project: "Raw-Water Transfer Skid - Unit 200",
+    tag: "P-101A",
+    docNo: "CAL-HYD-0142",
+    rev: "D",
+    preparedBy: "J. Rivera",
+    discipline: "Mech.",
+    ...(state.meta || {}),
+  };
 
-  const today = new Date("2026-04-18");
+  const today = new Date();
   const d = today.toISOString().slice(0, 10);
 
   return (
@@ -58,21 +42,21 @@ const Report = ({ state }) => {
         <div className="titleblock">
           <div className="tb-cell">
             <div className="k">Project</div>
-            <div className="v">Raw-Water Transfer Skid · Unit 200</div>
+            <div className="v">{meta.project}</div>
           </div>
           <div className="tb-cell">
-            <div className="k">Tag</div><div className="v">P-101A</div>
+            <div className="k">Tag</div><div className="v">{meta.tag}</div>
           </div>
           <div className="tb-cell">
-            <div className="k">Doc No.</div><div className="v">CAL-HYD-0142</div>
+            <div className="k">Doc No.</div><div className="v">{meta.docNo}</div>
           </div>
           <div className="tb-cell">
-            <div className="k">Rev / Date</div><div className="v">C · {d}</div>
+            <div className="k">Rev / Date</div><div className="v">{meta.rev} · {d}</div>
           </div>
         </div>
 
         <h1>Centrifugal Pump Sizing Calculation</h1>
-        <div className="doc-id">Prepared by  J. RIVERA · Mech.  ·  Checked —  ·  Approved —</div>
+        <div className="doc-id">Prepared by  {meta.preparedBy} · {meta.discipline}  ·  Checked —  ·  Approved —</div>
 
         <div className="two-col">
           <div>
@@ -85,7 +69,7 @@ const Report = ({ state }) => {
                 <tr><td>Vapor pressure Pv</td><td className="v">{U.fmt("press", sys.Pvap_kPa, 2)} {upr}</td></tr>
                 <tr><td>Atmospheric Patm</td><td className="v">{U.fmt("press", sys.Patm_kPa, 1)} {upr}</td></tr>
                 <tr><td>Temperature</td><td className="v">{U.fmt("temp", (fluid.tempC != null ? fluid.tempC : 20), 0)} {U.unit("temp")}</td></tr>
-                <tr><td>Design flow Q</td><td className="v">{U.fmt("flow", op.Q, 1)} {uf}</td></tr>
+                <tr><td>Design flow Q</td><td className="v">{U.fmt("flow", dutyQ, 1)} {uf}</td></tr>
               </tbody>
             </table>
 
@@ -108,7 +92,7 @@ const Report = ({ state }) => {
             <div className="section-head">Selected pump</div>
             <table>
               <tbody>
-                <tr><td>Model / tag</td><td className="v">P-101A</td></tr>
+                <tr><td>Model / tag</td><td className="v">{meta.tag}</td></tr>
                 <tr><td>Arrangement</td><td className="v">{arrange === "single" ? "Single" : `${nSet} × ${arrange}`}</td></tr>
                 <tr><td>Reference speed N₀</td><td className="v">{pump.N0} rpm</td></tr>
                 <tr><td>Reference impeller D₀</td><td className="v">{U.fmt("dia", pump.D0, U.US ? 2 : 0)} {ud}</td></tr>
@@ -153,9 +137,10 @@ const Report = ({ state }) => {
 
         <div className="section-head">Performance curve</div>
         <div className="mini-chart">
-          <window.PumpChart pump={effPump} sys={sysEff} op={op} rated={{ Q: ratedQ, H: ratedH }}
+          <window.PumpChart pump={effPump} sys={sysEff} op={{ ...op, Q: dutyQ }} rated={{ Q: ratedQ, H: ratedH }}
             U={U} tol={tol}
-            setOp={() => {}} width={730} height={238} Qmax={220}/>
+            dutyPoint={dutyPoint}
+            setOp={() => {}} width={730} height={238} Qmax={Qmax}/>
         </div>
 
         <div className="section-head">Notes &amp; assumptions</div>
@@ -168,7 +153,7 @@ const Report = ({ state }) => {
         </ol>
 
         <div className="sign">
-          <div className="line">Prepared — J. Rivera, Mech.</div>
+          <div className="line">Prepared — {meta.preparedBy}, {meta.discipline}</div>
           <div className="line">Checked —</div>
           <div className="line">Approved —</div>
         </div>

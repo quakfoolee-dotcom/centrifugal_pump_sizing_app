@@ -1,8 +1,14 @@
 // PumpChart.jsx — SVG chart with Q vs H, efficiency, NPSHr, NPSHa, system curve, op point.
 
-const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, U, width = 820, height = 460, Qmax = 220 }) => {
+const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, U, width = 820, height = 460, Qmax = 220, dutyPoint }) => {
   const PM = window.PumpMath;
   U = U || window.makeUnits("SI");
+  Qmax = Math.max(
+    Number.isFinite(Qmax) ? Qmax : 0,
+    op && Number.isFinite(op.Q) ? op.Q * 1.15 : 0,
+    rated && Number.isFinite(rated.Q) ? rated.Q * 1.15 : 0,
+    20
+  );
   const uQ = (v, n = 0) => U.conv("flow", v).toFixed(n);
   const uH = (v, n = 0) => U.conv("head", v).toFixed(n);
   const nSet = PM.nP(pump), arrange = PM.arr(pump);
@@ -89,12 +95,18 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
   const highSuctionEnergy = nss > 213;
 
   // System/pump intersection (combined)
-  const cross = PM.operatingPointCombined(pump, sys, Qmax);
+  const cross = dutyPoint || PM.operatingPointCombined(pump, sys, Qmax);
 
   const svgRef = React.useRef(null);
   const dragging = React.useRef(false);
+  // Mount-bound handlers below close over this ref, not over props/derived
+  // values directly — Qmax/M/iw change (e.g. switching pump arrangement)
+  // without the window listeners ever being re-attached.
+  const latest = React.useRef();
+  latest.current = { Qmax, M, iw, W, setOp };
 
   const toQ = (clientX) => {
+    const { Qmax, M, iw, W } = latest.current;
     const r = svgRef.current.getBoundingClientRect();
     const x = ((clientX - r.left) / r.width) * W;
     let q = ((x - M.l) / iw) * Qmax;
@@ -102,8 +114,8 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
     return q;
   };
 
-  const onDown = (e) => { dragging.current = true; setOp({ Q: toQ(e.clientX) }); e.preventDefault(); };
-  const onMove = (e) => { if (dragging.current) setOp({ Q: toQ(e.clientX) }); };
+  const onDown = (e) => { dragging.current = true; latest.current.setOp({ Q: toQ(e.clientX) }); e.preventDefault(); };
+  const onMove = (e) => { if (dragging.current) latest.current.setOp({ Q: toQ(e.clientX) }); };
   const onUp   = () => { dragging.current = false; };
 
   React.useEffect(() => {
