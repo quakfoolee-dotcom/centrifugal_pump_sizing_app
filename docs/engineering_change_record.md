@@ -26,6 +26,56 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.8 - Formula Manual Inline Math Rendering
+
+**Objective**
+
+Fix inline equation rendering in the mathematical formula manual so symbols and
+sample values display correctly in GitHub-flavored Markdown.
+
+**Before Fix**
+
+- Inline formulas used `\(...\)` delimiters throughout
+  `docs/mathematical_formula_manual.md`.
+- Some Markdown viewers displayed those expressions literally, for example
+  `\(\rho_{ref}=1068 \ kg/m^3\)`, instead of rendering them as inline math.
+
+**After Fix**
+
+- Converted inline formula delimiters from `\(...\)` to `$...$` across the
+  manual.
+- Left fenced `math` equation blocks unchanged.
+- Verified the reported examples now use `$...$` delimiters:
+  `$\rho_{ref}=1068 \ kg/m^3$`, `$T_{ref}=20^\circ C$`, and
+  `$T=30^\circ C$`.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `docs/engineering_change_record.md`
+- `docs/mathematical_formula_manual.md`
+
+**QC Results**
+
+- `rg "\\\(|\\\)" docs\mathematical_formula_manual.md` found no remaining
+  inline `\(...\)` delimiters.
+- Manual spot-check confirmed the reported examples were converted to `$...$`.
+- Manual spot-check corrected the energy-cost inline math from a raw currency
+  dollar sign to `\mathrm{USD/kWh}` and the annual-cost equation to
+  `\mathrm{USD/y}` to avoid ambiguous dollar-sign parsing.
+
+**Remaining Risk**
+
+Different Markdown renderers vary in math support. GitHub-flavored Markdown
+supports `$...$` inline math, while plain Markdown viewers may still show raw
+LaTeX syntax.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.7 - Mathematical Formula Manual and Local Tooling Ignore
 
 **Objective**

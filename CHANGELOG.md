@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.10.8] - 2026-07-08
+
+- Converted inline math in the mathematical formula manual from `\(...\)` to `$...$` for better Markdown rendering.
+- Replaced raw currency dollar signs in cost-equation notation with `USD` units to avoid math delimiter ambiguity.
+
 ## [0.10.7] - 2026-07-08
 
 - Added a LaTeX-style mathematical formula manual with engineering explanations and worked sample calculations.
