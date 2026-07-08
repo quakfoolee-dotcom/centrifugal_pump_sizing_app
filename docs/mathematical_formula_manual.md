@@ -12,23 +12,23 @@ SI units internally; US customary units are display conversions only.
 
 | Symbol | Meaning | Internal unit |
 | --- | --- | --- |
-| $Q$ | Volumetric flow | $m^3/h$ |
-| $Q_s$ | Volumetric flow in SI base seconds | $m^3/s$ |
-| $H$ | Head | $m$ |
-| $D$ | Pipe inside diameter or impeller diameter | $mm$ |
-| $L$ | Pipe length | $m$ |
-| $v$ | Velocity | $m/s$ |
-| $\rho$ | Density | $kg/m^3$ |
-| $\mu$ | Dynamic viscosity | $cP$ |
-| $g$ | Gravitational acceleration | $9.80665 \ m/s^2$ |
+| $Q$ | Volumetric flow | $\mathrm{m^3/h}$ |
+| $Q_s$ | Volumetric flow in SI base seconds | $\mathrm{m^3/s}$ |
+| $H$ | Head | $\mathrm{m}$ |
+| $D$ | Pipe inside diameter or impeller diameter | $\mathrm{mm}$ |
+| $L$ | Pipe length | $\mathrm{m}$ |
+| $v$ | Velocity | $\mathrm{m/s}$ |
+| $\rho$ | Density | $\mathrm{kg/m^3}$ |
+| $\mu$ | Dynamic viscosity | $\mathrm{cP}$ |
+| $g$ | Gravitational acceleration | $9.80665 \ \mathrm{m/s^2}$ |
 | $K$ | Minor-loss coefficient | dimensionless |
-| $N$ | Pump speed | $rpm$ |
+| $N$ | Pump speed | $\mathrm{rpm}$ |
 | $\eta$ | Pump or motor efficiency | decimal |
-| $P$ | Power | $kW$ |
+| $P$ | Power | $\mathrm{kW}$ |
 
 ### Flow Unit Conversion
 
-The app converts pump flow from $m^3/h$ to $m^3/s$ before power and velocity
+The app converts pump flow from $\mathrm{m^3/h}$ to $\mathrm{m^3/s}$ before power and velocity
 calculations.
 
 ```math
@@ -41,10 +41,10 @@ Q = 3600 Q_s
 
 **Example**
 
-For $Q = 36 \ m^3/h$:
+For $Q = 36 \ \mathrm{m^3/h}$:
 
 ```math
-Q_s = \frac{36}{3600} = 0.0100 \ m^3/s
+Q_s = \frac{36}{3600} = 0.0100 \ \mathrm{m^3/s}
 ```
 
 ## 2. Display Unit Conversions
@@ -55,31 +55,31 @@ values.
 ### SI To US Display Factors
 
 ```math
-Q_{gpm} = 4.402868 Q_{m^3/h}
+Q_{\mathrm{gpm}} = 4.402868 Q_{\mathrm{m^3/h}}
 ```
 
 ```math
-H_{ft} = 3.280840 H_m
+H_{\mathrm{ft}} = 3.280840 H_{\mathrm{m}}
 ```
 
 ```math
-P_{hp} = 1.341022 P_{kW}
+P_{\mathrm{hp}} = 1.341022 P_{\mathrm{kW}}
 ```
 
 ```math
-p_{psi} = 0.1450377 p_{kPa}
+p_{\mathrm{psi}} = 0.1450377 p_{\mathrm{kPa}}
 ```
 
 ```math
-D_{in} = 0.03937008 D_{mm}
+D_{\mathrm{in}} = 0.03937008 D_{\mathrm{mm}}
 ```
 
 ```math
-\rho_{lb/ft^3} = 0.06242796 \rho_{kg/m^3}
+\rho_{\mathrm{lb/ft^3}} = 0.06242796 \rho_{\mathrm{kg/m^3}}
 ```
 
 ```math
-E_{kWh/kgal} = 3.785412 E_{kWh/m^3}
+E_{\mathrm{kWh/kgal}} = 3.785412 E_{\mathrm{kWh/m^3}}
 ```
 
 ```math
@@ -88,20 +88,20 @@ T_F = \frac{9}{5}T_C + 32
 
 **Example**
 
-For $Q = 120 \ m^3/h$ and $H = 32 \ m$:
+For $Q = 120 \ \mathrm{m^3/h}$ and $H = 32 \ \mathrm{m}$:
 
 ```math
-Q_{gpm} = 4.402868(120) = 528.34 \ gpm
+Q_{\mathrm{gpm}} = 4.402868(120) = 528.34 \ \mathrm{gpm}
 ```
 
 ```math
-H_{ft} = 3.280840(32) = 104.99 \ ft
+H_{\mathrm{ft}} = 3.280840(32) = 104.99 \ \mathrm{ft}
 ```
 
-For $T = 20^\circ C$:
+For $T = 20^\circ \mathrm{C}$:
 
 ```math
-T_F = 1.8(20) + 32 = 68^\circ F
+T_F = 1.8(20) + 32 = 68^\circ \mathrm{F}
 ```
 
 ## 3. Pipe Velocity
@@ -114,7 +114,7 @@ Pipe velocity is calculated from flow and pipe inside diameter.
 A = \frac{\pi}{4}\left(\frac{D}{1000}\right)^2
 ```
 
-where $D$ is in mm and $A$ is in $m^2$.
+where $D$ is in $\mathrm{mm}$ and $A$ is in $\mathrm{m^2}$.
 
 ### Velocity
 
@@ -129,14 +129,14 @@ friction approximately with $v^2$, so pipe size strongly affects TDH.
 
 **Example**
 
-For $Q = 36 \ m^3/h$ and $D = 100 \ mm$:
+For $Q = 36 \ \mathrm{m^3/h}$ and $D = 100 \ \mathrm{mm}$:
 
 ```math
-A = \frac{\pi}{4}(0.100)^2 = 0.007854 \ m^2
+A = \frac{\pi}{4}(0.100)^2 = 0.007854 \ \mathrm{m^2}
 ```
 
 ```math
-v = \frac{36/3600}{0.007854} = 1.273 \ m/s
+v = \frac{36/3600}{0.007854} = 1.273 \ \mathrm{m/s}
 ```
 
 ## 4. Reynolds Number
@@ -145,7 +145,7 @@ v = \frac{36/3600}{0.007854} = 1.273 \ m/s
 Re = \frac{\rho v (D/1000)}{\mu \times 10^{-3}}
 ```
 
-where $\mu$ is entered in cP and converted to $Pa \cdot s$.
+where $\mu$ is entered in $\mathrm{cP}$ and converted to $\mathrm{Pa \cdot s}$.
 
 **Engineering Explanation**
 
@@ -154,8 +154,8 @@ Low Reynolds number is common for viscous service or low flow.
 
 **Example**
 
-For $v = 1.273 \ m/s$, $D = 100 \ mm$, $\rho = 1000 \ kg/m^3$, and
-$\mu = 1.0 \ cP$:
+For $v = 1.273 \ \mathrm{m/s}$, $D = 100 \ \mathrm{mm}$, $\rho = 1000 \ \mathrm{kg/m^3}$, and
+$\mu = 1.0 \ \mathrm{cP}$:
 
 ```math
 Re = \frac{1000(1.273)(0.100)}{0.001} = 127324
@@ -198,7 +198,7 @@ transitional, and turbulent flow.
 \epsilon_r = \frac{\epsilon}{D}
 ```
 
-where $\epsilon$ and $D$ are both in mm.
+where $\epsilon$ and $D$ are both in $\mathrm{mm}$.
 
 ### Churchill Terms
 
@@ -236,7 +236,7 @@ for low-flow and viscous service than forcing a fully turbulent approximation.
 
 **Example**
 
-For $Re = 1000$, $\epsilon = 0.046 \ mm$, and $D = 100 \ mm$:
+For $Re = 1000$, $\epsilon = 0.046 \ \mathrm{mm}$, and $D = 100 \ \mathrm{mm}$:
 
 ```math
 f \approx 0.064
@@ -305,11 +305,11 @@ depends on fitting count and geometry.
 
 **Example**
 
-For $Q=36 \ m^3/h$, $L=100 \ m$, $D=100 \ mm$, $\epsilon=0.046 \ mm$,
-$\rho=1000 \ kg/m^3$, $\mu=1 \ cP$, and $K=2$:
+For $Q=36 \ \mathrm{m^3/h}$, $L=100 \ \mathrm{m}$, $D=100 \ \mathrm{mm}$, $\epsilon=0.046 \ \mathrm{mm}$,
+$\rho=1000 \ \mathrm{kg/m^3}$, $\mu=1 \ \mathrm{cP}$, and $K=2$:
 
 ```math
-h_{line} \approx 1.789 \ m
+h_{line} \approx 1.789 \ \mathrm{m}
 ```
 
 ## 9. Static Lift
@@ -327,10 +327,10 @@ discharge destination and the suction source.
 
 **Example**
 
-For $Z_d = 19.5 \ m$ and $Z_s = 1.5 \ m$:
+For $Z_d = 19.5 \ \mathrm{m}$ and $Z_s = 1.5 \ \mathrm{m}$:
 
 ```math
-H_{static} = 19.5 - 1.5 = 18.0 \ m
+H_{static} = 19.5 - 1.5 = 18.0 \ \mathrm{m}
 ```
 
 ## 10. Vessel Pressure Head
@@ -340,7 +340,7 @@ H_p =
 \frac{(P_d - P_s)1000}{\rho g}
 ```
 
-where $P_d$ and $P_s$ are gauge pressures in kPa.
+where $P_d$ and $P_s$ are gauge pressures in $\mathrm{kPa}$.
 
 **Engineering Explanation**
 
@@ -355,13 +355,13 @@ P_d - P_s = 0
 ```
 
 ```math
-H_p = 0 \ m
+H_p = 0 \ \mathrm{m}
 ```
 
 For a 100 kPa discharge pressure rise with water:
 
 ```math
-H_p = \frac{100000}{1000(9.80665)} = 10.20 \ m
+H_p = \frac{100000}{1000(9.80665)} = 10.20 \ \mathrm{m}
 ```
 
 ## 11. System Head Curve
@@ -378,10 +378,10 @@ The operating point is where the pump curve and system curve intersect.
 
 **Example**
 
-For the default system at $Q = 110 \ m^3/h$:
+For the default system at $Q = 110 \ \mathrm{m^3/h}$:
 
 ```math
-H_{sys}(110) \approx 23.253 \ m
+H_{sys}(110) \approx 23.253 \ \mathrm{m}
 ```
 
 ## 12. Water Property Correlations
@@ -430,18 +430,18 @@ NPSHa, and power.
 
 **Example**
 
-At $T = 20^\circ C$:
+At $T = 20^\circ \mathrm{C}$:
 
 ```math
-\rho_w \approx 998.204 \ kg/m^3
+\rho_w \approx 998.204 \ \mathrm{kg/m^3}
 ```
 
 ```math
-\mu_w \approx 1.00175 \ cP
+\mu_w \approx 1.00175 \ \mathrm{cP}
 ```
 
 ```math
-P_{vap} \approx 2.330 \ kPa
+P_{vap} \approx 2.330 \ \mathrm{kPa}
 ```
 
 ## 13. Generic Non-Water Fluid Property Adjustments
@@ -501,15 +501,15 @@ a replacement for process data sheets or vendor property data.
 
 **Example**
 
-For an aqueous preset with $\rho_{ref}=1068 \ kg/m^3$, $T_{ref}=20^\circ C$,
-and $T=30^\circ C$:
+For an aqueous preset with $\rho_{ref}=1068 \ \mathrm{kg/m^3}$, $T_{ref}=20^\circ \mathrm{C}$,
+and $T=30^\circ \mathrm{C}$:
 
 ```math
 \rho(30) = 1068[1 - 0.0004(30-20)]
 ```
 
 ```math
-\rho(30) = 1063.7 \ kg/m^3
+\rho(30) = 1063.7 \ \mathrm{kg/m^3}
 ```
 
 ## 14. Catalog Curve Interpolation
@@ -562,7 +562,7 @@ H(150) = 32 + \frac{150-120}{200-120}(17-32)
 ```
 
 ```math
-H(150) = 26.375 \ m
+H(150) = 26.375 \ \mathrm{m}
 ```
 
 ## 15. Parametric Pump Curve Fallback
@@ -617,30 +617,30 @@ This is a screening fallback. It is not a substitute for a vendor curve.
 
 **Example**
 
-For $Q_b=120 \ m^3/h$, $H_b=32 \ m$, and $\eta_{max}=0.78$:
+For $Q_b=120 \ \mathrm{m^3/h}$, $H_b=32 \ \mathrm{m}$, and $\eta_{max}=0.78$:
 
 ```math
-H_0 = 1.25(32) = 40 \ m
+H_0 = 1.25(32) = 40 \ \mathrm{m}
 ```
 
 ```math
 a = \frac{40-32}{120^2} = 0.0005556
 ```
 
-At $Q=120 \ m^3/h$:
+At $Q=120 \ \mathrm{m^3/h}$:
 
 ```math
-H(120)=40-0.0005556(120)^2 = 32 \ m
+H(120)=40-0.0005556(120)^2 = 32 \ \mathrm{m}
 ```
 
 ```math
 \eta(120)=0.78
 ```
 
-For $NPSHr_b = 3.2 \ m$:
+For $NPSHr_b = 3.2 \ \mathrm{m}$:
 
 ```math
-NPSHr(120)=3.2[0.55+0.45(1)^2]=3.2 \ m
+NPSHr(120)=3.2[0.55+0.45(1)^2]=3.2 \ \mathrm{m}
 ```
 
 ## 16. Affinity-Law Scaling
@@ -702,7 +702,7 @@ excursions outside:
 
 **Example**
 
-At half speed, $N=1475 \ rpm$, $N_0=2950 \ rpm$, and $D=D_0$:
+At half speed, $N=1475 \ \mathrm{rpm}$, $N_0=2950 \ \mathrm{rpm}$, and $D=D_0$:
 
 ```math
 s_N = \frac{1475}{2950}=0.5
@@ -719,13 +719,13 @@ H_{scale}=0.5^2=0.25
 The BEP flow changes from $120$ to:
 
 ```math
-Q_b = 120(0.5)=60 \ m^3/h
+Q_b = 120(0.5)=60 \ \mathrm{m^3/h}
 ```
 
 The BEP head changes from $32$ to:
 
 ```math
-H_b = 32(0.25)=8 \ m
+H_b = 32(0.25)=8 \ \mathrm{m}
 ```
 
 Because $s_N=0.5$, this is outside the recommended affinity range and should
@@ -856,7 +856,7 @@ margin. This is a screening model.
 
 **Example**
 
-For $Q_b=120 \ m^3/h$, $H_b=32 \ m$, $\mu=150 \ cP$, $N_s=40$, and
+For $Q_b=120 \ \mathrm{m^3/h}$, $H_b=32 \ \mathrm{m}$, $\mu=150 \ \mathrm{cP}$, $N_s=40$, and
 $R_Q=1.0$:
 
 ```math
@@ -885,10 +885,10 @@ C_H = 0.842
 C_{NPSH} = 1.167
 ```
 
-For the sample pump, viscous NPSHr at BEP changes from $3.2 \ m$ to:
+For the sample pump, viscous NPSHr at BEP changes from $3.2 \ \mathrm{m}$ to:
 
 ```math
-NPSHr_{visc} \approx 3.497 \ m
+NPSHr_{visc} \approx 3.497 \ \mathrm{m}
 ```
 
 ## 18. BEP Flow And Head
@@ -916,13 +916,13 @@ The BEP flow shifts with speed, impeller diameter, and viscosity.
 At reference speed and diameter, clean water:
 
 ```math
-Q_{BEP}=120(1)(1)=120 \ m^3/h
+Q_{BEP}=120(1)(1)=120 \ \mathrm{m^3/h}
 ```
 
 For the 150 cP example with $C_Q=0.917$:
 
 ```math
-Q_{BEP,visc}=120(0.917)=110.1 \ m^3/h
+Q_{BEP,visc}=120(0.917)=110.1 \ \mathrm{m^3/h}
 ```
 
 ## 19. NPSH Available
@@ -942,10 +942,10 @@ subtracting suction-side losses.
 
 **Example**
 
-For the default system at $Q=110 \ m^3/h$:
+For the default system at $Q=110 \ \mathrm{m^3/h}$:
 
 ```math
-NPSHa \approx 10.907 \ m
+NPSHa \approx 10.907 \ \mathrm{m}
 ```
 
 ## 20. Cavitation Margin Criteria
@@ -978,15 +978,15 @@ R_{required}=1.3
 ```
 
 ```math
-M_{absolute}=0.6 \ m
+M_{absolute}=0.6 \ \mathrm{m}
 ```
 
 **Example**
 
-For a duty with $NPSHa=11.351 \ m$ and $NPSHr=4.409 \ m$:
+For a duty with $NPSHa=11.351 \ \mathrm{m}$ and $NPSHr=4.409 \ \mathrm{m}$:
 
 ```math
-M_{NPSH}=11.351-4.409=6.942 \ m
+M_{NPSH}=11.351-4.409=6.942 \ \mathrm{m}
 ```
 
 ```math
@@ -1040,17 +1040,17 @@ identical pumps and ideal distribution/losses.
 
 **Example**
 
-For two identical parallel pumps at total $Q=240 \ m^3/h$:
+For two identical parallel pumps at total $Q=240 \ \mathrm{m^3/h}$:
 
 ```math
-Q_{per\ pump}=\frac{240}{2}=120 \ m^3/h
+Q_{per\ pump}=\frac{240}{2}=120 \ \mathrm{m^3/h}
 ```
 
 ```math
 H_{combined}(240)=H_{single}(120)
 ```
 
-For two identical series pumps at $Q=120 \ m^3/h$:
+For two identical series pumps at $Q=120 \ \mathrm{m^3/h}$:
 
 ```math
 H_{combined}(120)=2H_{single}(120)
@@ -1078,11 +1078,11 @@ achievable.
 For the current default case used in QC:
 
 ```math
-Q_{duty} \approx 162.752 \ m^3/h
+Q_{duty} \approx 162.752 \ \mathrm{m^3/h}
 ```
 
 ```math
-H_{duty} \approx 25.284 \ m
+H_{duty} \approx 25.284 \ \mathrm{m}
 ```
 
 At this point:
@@ -1103,7 +1103,7 @@ G(N)=H_{combined}(Q_{target},N)-H_{sys}(Q_{target})
 The speed solver searches:
 
 ```math
-150 \le N \le 6000 \ rpm
+150 \le N \le 6000 \ \mathrm{rpm}
 ```
 
 and reports one of:
@@ -1119,10 +1119,10 @@ the action if the speed solution is outside the recommended affinity range.
 
 **Example**
 
-For the default selected flow $Q_{target}=110 \ m^3/h$:
+For the default selected flow $Q_{target}=110 \ \mathrm{m^3/h}$:
 
 ```math
-N_{target} \approx 2474.8 \ rpm
+N_{target} \approx 2474.8 \ \mathrm{rpm}
 ```
 
 ## 24. Minimum VFD Speed
@@ -1148,13 +1148,13 @@ and vessel pressure requirements.
 For the default system:
 
 ```math
-H_{target}=18.0+0=18.0 \ m
+H_{target}=18.0+0=18.0 \ \mathrm{m}
 ```
 
 The app calculates:
 
 ```math
-N_{min,VFD} \approx 1978.9 \ rpm
+N_{min,VFD} \approx 1978.9 \ \mathrm{rpm}
 ```
 
 ## 25. Hydraulic Power
@@ -1170,7 +1170,7 @@ Hydraulic power is the useful liquid power added by the pump.
 
 **Example**
 
-For $Q=120 \ m^3/h$, $H=32 \ m$, and $\rho=998 \ kg/m^3$:
+For $Q=120 \ \mathrm{m^3/h}$, $H=32 \ \mathrm{m}$, and $\rho=998 \ \mathrm{kg/m^3}$:
 
 ```math
 P_{hyd} =
@@ -1178,7 +1178,7 @@ P_{hyd} =
 ```
 
 ```math
-P_{hyd}=10.44 \ kW
+P_{hyd}=10.44 \ \mathrm{kW}
 ```
 
 ## 26. Brake / Shaft Power
@@ -1201,10 +1201,10 @@ floor avoids division by zero at extreme off-curve conditions.
 
 **Example**
 
-For $P_{hyd}=10.44 \ kW$ and $\eta=0.78$:
+For $P_{hyd}=10.44 \ \mathrm{kW}$ and $\eta=0.78$:
 
 ```math
-P_{brake}=\frac{10.44}{0.78}=13.38 \ kW
+P_{brake}=\frac{10.44}{0.78}=13.38 \ \mathrm{kW}
 ```
 
 ## 27. Motor Selection
@@ -1237,28 +1237,28 @@ margin.
 
 **Example**
 
-For $P_{brake}=13.4 \ kW$:
+For $P_{brake}=13.4 \ \mathrm{kW}$:
 
 ```math
-P_{required}=1.15(13.4)=15.41 \ kW
+P_{required}=1.15(13.4)=15.41 \ \mathrm{kW}
 ```
 
 The next IEC size is:
 
 ```math
-P_{motor,selected}=18.5 \ kW
+P_{motor,selected}=18.5 \ \mathrm{kW}
 ```
 
 The equivalent required horsepower is:
 
 ```math
-P_{required,hp}=\frac{15.41}{0.745699872}=20.67 \ hp
+P_{required,hp}=\frac{15.41}{0.745699872}=20.67 \ \mathrm{hp}
 ```
 
 The next NEMA size is:
 
 ```math
-P_{motor,selected}=25 \ hp
+P_{motor,selected}=25 \ \mathrm{hp}
 ```
 
 ## 28. Motor Efficiency Curve
@@ -1279,8 +1279,8 @@ and cost, not the hydraulic duty point.
 
 **Example**
 
-For a selected motor near $15 \ kW$, interpolating between $11 \ kW$ at
-$0.910$ and $22 \ kW$ at $0.925$:
+For a selected motor near $15 \ \mathrm{kW}$, interpolating between $11 \ \mathrm{kW}$ at
+$0.910$ and $22 \ \mathrm{kW}$ at $0.925$:
 
 ```math
 \eta_m(15) =
@@ -1328,15 +1328,15 @@ efficiency, operating hours, and energy price.
 
 **Example**
 
-For $P_{brake,total}=13.4 \ kW$, $\eta_m=0.91545$, $t=8000 \ h/y$,
-$c=0.12 \ \mathrm{USD/kWh}$, and $Q=120 \ m^3/h$:
+For $P_{brake,total}=13.4 \ \mathrm{kW}$, $\eta_m=0.91545$, $t=8000 \ \mathrm{h/y}$,
+$c=0.12 \ \mathrm{USD/kWh}$, and $Q=120 \ \mathrm{m^3/h}$:
 
 ```math
-P_{input}=\frac{13.4}{0.91545}=14.64 \ kW
+P_{input}=\frac{13.4}{0.91545}=14.64 \ \mathrm{kW}
 ```
 
 ```math
-E_{year}=14.64(8000)=117100 \ kWh/y
+E_{year}=14.64(8000)=117100 \ \mathrm{kWh/y}
 ```
 
 ```math
@@ -1344,7 +1344,7 @@ C_{year}=117100(0.12)=14052 \ \mathrm{USD/y}
 ```
 
 ```math
-E_s=\frac{14.64}{120}=0.122 \ kWh/m^3
+E_s=\frac{14.64}{120}=0.122 \ \mathrm{kWh/m^3}
 ```
 
 ## 30. Specific Speed
@@ -1361,7 +1361,7 @@ not from the combined parallel/series set.
 
 **Example**
 
-For $N=2950 \ rpm$, $Q=120 \ m^3/h$, and $H=32 \ m$:
+For $N=2950 \ \mathrm{rpm}$, $Q=120 \ \mathrm{m^3/h}$, and $H=32 \ \mathrm{m}$:
 
 ```math
 N_s =
@@ -1418,10 +1418,10 @@ Minimum flow is a screening protection against recirculation and overheating.
 
 **Example**
 
-For $Q_{BEP}=120 \ m^3/h$ and $p_{min}=45\%$:
+For $Q_{BEP}=120 \ \mathrm{m^3/h}$ and $p_{min}=45\%$:
 
 ```math
-Q_{min}=120(0.45)=54 \ m^3/h
+Q_{min}=120(0.45)=54 \ \mathrm{m^3/h}
 ```
 
 ## 33. Preferred Operating Region
@@ -1439,7 +1439,7 @@ operating region and preferred operating region.
 
 **Example**
 
-If $Q_{duty}=162.75 \ m^3/h$ and $Q_{BEP}=120 \ m^3/h$:
+If $Q_{duty}=162.75 \ \mathrm{m^3/h}$ and $Q_{BEP}=120 \ \mathrm{m^3/h}$:
 
 ```math
 \frac{Q_{duty}}{Q_{BEP}}100 =
@@ -1471,10 +1471,10 @@ selection margin. The app also checks whether rated flow is left of BEP.
 
 **Example**
 
-For $Q_{duty}=162.75 \ m^3/h$, $M_Q=10\%$, and $M_H=0\%$:
+For $Q_{duty}=162.75 \ \mathrm{m^3/h}$, $M_Q=10\%$, and $M_H=0\%$:
 
 ```math
-Q_{rated}=162.75(1.10)=179.03 \ m^3/h
+Q_{rated}=162.75(1.10)=179.03 \ \mathrm{m^3/h}
 ```
 
 ```math
@@ -1509,22 +1509,22 @@ generic ANSI/HI band.
 **Example**
 
 For ISO 9906 Grade 2B, $\Delta Q=8\%$, $\Delta H=5\%$. If
-$Q_g=180 \ m^3/h$, $H_g=25 \ m$:
+$Q_g=180 \ \mathrm{m^3/h}$, $H_g=25 \ \mathrm{m}$:
 
 ```math
-Q_{low}=180(0.92)=165.6 \ m^3/h
+Q_{low}=180(0.92)=165.6 \ \mathrm{m^3/h}
 ```
 
 ```math
-Q_{high}=180(1.08)=194.4 \ m^3/h
+Q_{high}=180(1.08)=194.4 \ \mathrm{m^3/h}
 ```
 
 ```math
-H_{low}=25(0.95)=23.75 \ m
+H_{low}=25(0.95)=23.75 \ \mathrm{m}
 ```
 
 ```math
-H_{high}=25(1.05)=26.25 \ m
+H_{high}=25(1.05)=26.25 \ \mathrm{m}
 ```
 
 ## 36. Pipe Schedule ID
@@ -1547,15 +1547,15 @@ Reynolds number, and friction head.
 For DN150 Schedule 40:
 
 ```math
-OD = 168.3 \ mm
+OD = 168.3 \ \mathrm{mm}
 ```
 
 ```math
-t = 7.11 \ mm
+t = 7.11 \ \mathrm{mm}
 ```
 
 ```math
-ID = 168.3 - 2(7.11)=154.1 \ mm
+ID = 168.3 - 2(7.11)=154.1 \ \mathrm{mm}
 ```
 
 ## 37. Nearest Pipe Lookup
@@ -1569,12 +1569,12 @@ e = |ID_{table} - ID_{entered}|
 The nearest pipe is reported only if:
 
 ```math
-e \le 0.6 \ mm
+e \le 0.6 \ \mathrm{mm}
 ```
 
 **Example**
 
-For $ID_{entered}=154.1 \ mm$, the app finds DN150 Schedule 40:
+For $ID_{entered}=154.1 \ \mathrm{mm}$, the app finds DN150 Schedule 40:
 
 ```math
 e=|154.1-154.1|=0
@@ -1588,11 +1588,11 @@ system, default pump, and current formula set.
 ### Solved Duty Point
 
 ```math
-Q_{duty} \approx 162.752 \ m^3/h
+Q_{duty} \approx 162.752 \ \mathrm{m^3/h}
 ```
 
 ```math
-H_{duty} \approx 25.284 \ m
+H_{duty} \approx 25.284 \ \mathrm{m}
 ```
 
 ```math
@@ -1602,15 +1602,15 @@ H_{duty} \approx 25.284 \ m
 ### NPSH
 
 ```math
-NPSHa \approx 11.351 \ m
+NPSHa \approx 11.351 \ \mathrm{m}
 ```
 
 ```math
-NPSHr \approx 4.409 \ m
+NPSHr \approx 4.409 \ \mathrm{m}
 ```
 
 ```math
-M_{NPSH} \approx 6.942 \ m
+M_{NPSH} \approx 6.942 \ \mathrm{m}
 ```
 
 ```math
@@ -1620,11 +1620,11 @@ R_{NPSH} \approx 2.575
 ### VFD
 
 ```math
-N_{target} \approx 2474.8 \ rpm
+N_{target} \approx 2474.8 \ \mathrm{rpm}
 ```
 
 ```math
-N_{min,VFD} \approx 1978.9 \ rpm
+N_{min,VFD} \approx 1978.9 \ \mathrm{rpm}
 ```
 
 ## 39. Engineering Limitations

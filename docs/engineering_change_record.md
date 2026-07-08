@@ -26,6 +26,54 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.9 - Formula Manual Unit Rendering
+
+**Objective**
+
+Normalize engineering unit notation in the mathematical formula manual so units
+such as m/s, kg/m^3, and m^3/h render compactly and read like standard pump
+datasheet notation.
+
+**Before Fix**
+
+- Inline and display math used raw math-mode unit text such as `\ m/s`.
+- Some Markdown math renderers could show slash units with operator-style
+  spacing, for example `m / s` instead of `m/s`.
+- Conversion-equation subscripts also used raw unit text such as `Q_{m^3/h}`.
+
+**After Fix**
+
+- Wrapped engineering units in `\mathrm{...}` where they appear in math spans
+  and equation examples.
+- Updated conversion-equation unit subscripts to use `\mathrm{...}`.
+- Kept variables and equations unchanged; only documentation notation was
+  normalized.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `docs/engineering_change_record.md`
+- `docs/mathematical_formula_manual.md`
+
+**QC Results**
+
+- Spot-checked velocity examples to confirm they now use
+  `\mathrm{m/s}` notation.
+- Scanned for slash-style units to verify common hydraulic units are wrapped
+  in `\mathrm{...}` where they appear as units.
+- `git diff --check` passed with line-ending warnings only.
+
+**Remaining Risk**
+
+Markdown math rendering still depends on the viewer. GitHub should render these
+units compactly, while plain Markdown viewers may still show raw LaTeX.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.8 - Formula Manual Inline Math Rendering
 
 **Objective**

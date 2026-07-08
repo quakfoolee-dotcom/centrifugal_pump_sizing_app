@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.10.9] - 2026-07-08
+
+- Normalized engineering unit notation in the mathematical formula manual to use upright `\mathrm{...}` units, preventing rendered units such as `m/s` from appearing with spaced slashes.
+
 ## [0.10.8] - 2026-07-08
 
 - Converted inline math in the mathematical formula manual from `\(...\)` to `$...$` for better Markdown rendering.
