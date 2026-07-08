@@ -52,7 +52,7 @@ so it does not depend on CDN access during the test.
 
 ```text
 smoke-test: duty solve, parallel case, and pipe helpers passed
-browser-smoke-test: tabs, metadata, dirty-load snapshots, case import/export, numeric inputs, units, and report print passed
+browser-smoke-test: flags, tabs, metadata, dirty-load snapshots, case import/export, numeric inputs, units, and report print passed
 verify-formulas: all 82 first-principles checks passed
 ```
 
@@ -78,10 +78,12 @@ calculation or workflow assertion that failed.
 | Fluid property flags | Estimated non-water preset flag and mineral-acid handling for sulfuric acid-style fluids. |
 | Case workflow | Current-state case export, valid single-case import, case-library import without active-state replacement, invalid library rejection, and dirty-load snapshot protection. |
 | Chart UX wiring | Explicit NPSH tick scale, target-flow label, solved-duty label, and pointer-event drag wiring. |
+| Warning UX wiring | Calculator flags are grouped by critical, caution, and collapsed model-assumption tiers. |
 | Numeric input UX | Focused draft text is preserved, comma decimals are accepted on commit, and numeric field parsing is covered in the browser workflow. |
 | App shell wiring | Main app loads the case helper, topbar uses the shared version, report-print handler is wired, report-print label is explicit, metadata status fallback is removed, dirty work is protected before destructive case transitions, and print CSS targets the report view. |
 | Standalone artifact hygiene | Committed standalone HTML does not accumulate duplicate app CSS header comments. |
 | Browser bootstrap | Standalone app loads in headless Chrome/Edge without CDN access and exposes the shared helpers. |
+| Browser flag workflow | Default model assumptions render collapsed, are separate from critical flags, and can be expanded. |
 | Browser navigation | Calculator, Report preview, and Compare tabs activate through click interactions. |
 | Browser metadata workflow | Report metadata fields are edited through real inputs and verified in the report titleblock. |
 | Browser case workflow | Save to localStorage, current-case JSON download, dirty saved-case load with automatic snapshot, invalid JSON import alert, valid single-case import, valid library import, and a library containing a case named `state`. |

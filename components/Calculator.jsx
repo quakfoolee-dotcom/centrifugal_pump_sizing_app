@@ -259,6 +259,37 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
     ? (fluid.customName || "Custom fluid")
     : (fluidPresets[fluid.key] ? fluidPresets[fluid.key].name : fluid.key);
   const tagLabel = String(meta.tag || "").trim();
+  const criticalFlags = [
+    noDutyPoint && "No achievable duty point - pump/system mismatch",
+    affinityOutOfBounds && `Affinity limits exceeded - ${affinity.messages.join(", ")}`,
+    belowMinFlow && "Below minimum flow - recirculation / overheating",
+    !noDutyPoint && !cavOk && `NPSH ratio ${ratioActual.toFixed(2)} < ${npshRatio.toFixed(2)} req.`,
+  ].filter(Boolean);
+  const cautionFlags = [
+    speedForDutyClamped && "VFD target outside 150-6000 rpm",
+    vfdAffinityWarn && "VFD target outside affinity range",
+    minVfdClamped && "Min static VFD speed outside 150-6000 rpm",
+    minVfdInvalid && "Min static VFD speed cannot be solved",
+    highSuctionEnergy && `High suction energy - Nss ${Nss.toFixed(0)}`,
+    !noDutyPoint && !inPOR && !belowMinFlow && `Outside preferred region (${bepPct.toFixed(0)}% BEP)`,
+    catalogExtrapolated && `Catalog curve extrapolated ${catalogExtrap.above ? "above" : "below"} entered flow range`,
+    catalogRatedExtrapolated && `Rated point extrapolated ${catalogRatedExtrap.above ? "above" : "below"} catalog flow range`,
+    catalogSelectedExtrapolated && `Selected/VFD target extrapolated ${catalogSelectedExtrap.above ? "above" : "below"} catalog flow range`,
+    catalogHeadFlattened && "Catalog head data flattened - check rising/unstable curve",
+    transitionalFlow && "Transitional suction Reynolds number",
+    viscHighRisk && "Vendor viscous curve required",
+    !ratedLeftOfBEP && "Rated flow right of BEP - select larger pump",
+  ].filter(Boolean);
+  const assumptionFlags = [
+    curveEstimated && "Estimated pump curve - add vendor catalog points",
+    catalogEtaEstimated && "Catalog efficiency estimated - enter eta points",
+    catalogNpshrEstimated && "Catalog NPSHr estimated - enter NPSHr points",
+    fluidPropsEstimated && "Preset fluid properties are estimated",
+    minorLossesApprox && (hasGenericReducer ? "Reducer K-value is generic" : "Fitting K-values are generic"),
+    viscActive && `Approx viscous correction active - mu ${sys.mu.toFixed(1)} cP, NPSHr x${visc.CNPSH.toFixed(2)}`,
+    viscModelScreening && "Viscosity correction coefficients are screening-grade",
+  ].filter(Boolean);
+  const hasCalculationFlags = criticalFlags.length || cautionFlags.length || assumptionFlags.length;
 
   return (
     <div className="doc">
@@ -522,38 +553,31 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           <div className="res-cell"><span className="k">NPSH mgn</span><span className="v" style={{color: cavOk ? "var(--ok)" : "var(--bad)"}}>{U.fmt("head", margin, 2)}</span><span className="u">{U.unit("head")}</span></div>
         </div>
 
-        {(noDutyPoint || affinityOutOfBounds || speedForDutyClamped || vfdAffinityWarn || minVfdClamped || minVfdInvalid ||
-          belowMinFlow || !cavOk || highSuctionEnergy || !inPOR ||
-          !ratedLeftOfBEP || viscActive || viscHighRisk || viscModelScreening || curveEstimated ||
-          catalogEtaEstimated || catalogNpshrEstimated ||
-          catalogExtrapolated || catalogRatedExtrapolated || catalogSelectedExtrapolated ||
-          catalogHeadFlattened || fluidPropsEstimated ||
-          transitionalFlow || minorLossesApprox) && (
-          <div style={{display:"flex", flexWrap:"wrap", gap:8, padding:"8px var(--pad)", borderTop:"var(--hair)"}}>
-            {noDutyPoint && <span className="pill bad">◆ No achievable duty point — pump/system mismatch</span>}
-            {affinityOutOfBounds && <span className="pill bad">◆ Affinity limits exceeded · {affinity.messages.join(", ")}</span>}
-            {speedForDutyClamped && <span className="pill warn">▲ VFD target outside 150-6000 rpm</span>}
-            {vfdAffinityWarn && <span className="pill warn">▲ VFD target outside affinity range</span>}
-            {minVfdClamped && <span className="pill warn">▲ Min static VFD speed outside 150-6000 rpm</span>}
-            {minVfdInvalid && <span className="pill warn">▲ Min static VFD speed cannot be solved</span>}
-            {belowMinFlow && <span className="pill bad">◆ Below min flow — recirculation / overheating</span>}
-            {!noDutyPoint && !cavOk && <span className="pill bad">◆ NPSH ratio {ratioActual.toFixed(2)} &lt; {npshRatio.toFixed(2)} req.</span>}
-            {highSuctionEnergy && <span className="pill warn">▲ High suction energy · Nss {Nss.toFixed(0)}</span>}
-            {!noDutyPoint && !inPOR && !belowMinFlow && <span className="pill warn">▲ Outside preferred region ({bepPct.toFixed(0)}% BEP)</span>}
-            {curveEstimated && <span className="pill warn">▲ Estimated pump curve — add vendor catalog points</span>}
-            {catalogExtrapolated && <span className="pill warn">▲ Catalog curve extrapolated {catalogExtrap.above ? "above" : "below"} entered flow range</span>}
-            {catalogRatedExtrapolated && <span className="pill warn">▲ Rated point extrapolated {catalogRatedExtrap.above ? "above" : "below"} catalog flow range</span>}
-            {catalogSelectedExtrapolated && <span className="pill warn">▲ Selected/VFD target extrapolated {catalogSelectedExtrap.above ? "above" : "below"} catalog flow range</span>}
-            {catalogEtaEstimated && <span className="pill warn">▲ Catalog efficiency estimated — enter η points</span>}
-            {catalogNpshrEstimated && <span className="pill warn">▲ Catalog NPSHr estimated — enter NPSHr points</span>}
-            {catalogHeadFlattened && <span className="pill warn">▲ Catalog head data flattened — check rising/unstable curve</span>}
-            {fluidPropsEstimated && <span className="pill warn">▲ Preset fluid properties are estimated</span>}
-            {transitionalFlow && <span className="pill warn">▲ Transitional suction Reynolds number</span>}
-            {minorLossesApprox && <span className="pill warn">▲ {hasGenericReducer ? "Reducer K-value is generic" : "Fitting K-values are generic"}</span>}
-            {viscActive && <span className="pill">● Approx viscous correction active · μ {sys.mu.toFixed(1)} cP · NPSHr ×{visc.CNPSH.toFixed(2)}</span>}
-            {viscModelScreening && <span className="pill warn">▲ Viscosity correction coefficients are screening-grade</span>}
-            {viscHighRisk && <span className="pill warn">▲ Vendor viscous curve required</span>}
-            {!ratedLeftOfBEP && <span className="pill warn">▲ Rated flow right of BEP — select larger pump</span>}
+        {hasCalculationFlags && (
+          <div className="flag-panel" data-flag-panel>
+            {criticalFlags.length > 0 && (
+              <div className="flag-group" data-flag-tier="critical">
+                <span className="flag-group-label bad">Critical</span>
+                {criticalFlags.map((text, i) => <span key={`critical-${i}`} className="pill bad">{text}</span>)}
+              </div>
+            )}
+            {cautionFlags.length > 0 && (
+              <div className="flag-group" data-flag-tier="caution">
+                <span className="flag-group-label warn">Caution</span>
+                {cautionFlags.map((text, i) => <span key={`caution-${i}`} className="pill warn">{text}</span>)}
+              </div>
+            )}
+            {assumptionFlags.length > 0 && (
+              <details className="assumption-flags" data-flag-tier="assumption">
+                <summary>
+                  <span className="flag-group-label">Assumptions</span>
+                  <span className="pill muted">{assumptionFlags.length} model assumption{assumptionFlags.length === 1 ? "" : "s"}</span>
+                </summary>
+                <div className="assumption-list">
+                  {assumptionFlags.map((text, i) => <span key={`assumption-${i}`} className="pill muted">{text}</span>)}
+                </div>
+              </details>
+            )}
           </div>
         )}
       </div>

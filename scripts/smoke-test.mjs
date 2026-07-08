@@ -78,7 +78,7 @@ const baseState = {
   op: { Q: 110 },
 };
 
-assert(PumpCases.APP_VERSION === "0.10.21", "app version helper should match this release");
+assert(PumpCases.APP_VERSION === "0.10.22", "app version helper should match this release");
 const editedState = {
   ...baseState,
   meta: { ...baseState.meta, tag: "LIVE-EDIT", docNo: "" },
@@ -131,6 +131,7 @@ assert(appHtml.includes("pumpcalc:baseline"), "dirty-load protection should pers
 const appCss = readFileSync("styles.css", "utf8");
 assert(appCss.includes("@media print"), "print stylesheet should be present");
 assert(appCss.includes(".view[data-screen-label=\"02 Report\"]"), "print stylesheet should force the report view");
+assert(appCss.includes(".flag-panel") && appCss.includes(".assumption-flags"), "calculator should style tiered calculation flags");
 const standaloneHtml = readFileSync("Pump_Calculator_standalone.html", "utf8");
 const standaloneHeaderCount = (standaloneHtml.match(/Centrifugal Pump Calculator/g) || []).length;
 assert(standaloneHeaderCount <= 1, "standalone build should not accumulate duplicate app CSS header comments");
@@ -141,6 +142,8 @@ assert(chartJsx.includes("onPointerDown") && chartJsx.includes("setPointerCaptur
 assert(!chartJsx.includes("onMouseDown={onDown}") && !chartJsx.includes("mousemove"), "chart should not depend on mouse-only drag listeners");
 const calculatorJsx = readFileSync("components/Calculator.jsx", "utf8");
 assert(calculatorJsx.includes("parseFieldDisplay") && calculatorJsx.includes("inputMode=\"decimal\""), "numeric fields should keep focused draft text and parse decimal input on commit");
+assert(calculatorJsx.includes("criticalFlags") && calculatorJsx.includes("cautionFlags") && calculatorJsx.includes("assumptionFlags"), "calculator should classify calculation flags by severity");
+assert(calculatorJsx.includes("data-flag-tier=\"critical\"") && calculatorJsx.includes("data-flag-tier=\"assumption\""), "calculator should render severity-tiered flag groups");
 
 const US = makeUnits("US");
 assertNear(US.conv("flow", 1), 4.402868, 1e-6, "m3/h to gpm conversion");

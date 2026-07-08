@@ -25,6 +25,68 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.22 - Tiered Calculation Flags
+
+**Objective**
+
+Reduce warning fatigue in the live calculator so critical pump-selection issues
+remain visible while disclosure-grade model assumptions stay available without
+competing for attention.
+
+**Before Fix**
+
+- The calculator rendered all calculation flags in one inline row.
+- Critical blockers such as no achievable duty point, cavitation failure,
+  affinity-limit violations, and low-flow operation visually competed with
+  assumptions such as estimated pump curves, generic K-values, estimated fluid
+  properties, and screening-grade viscosity coefficients.
+- The default demo case could present multiple same-style warning pills, making
+  users more likely to stop reading important flags.
+
+**After Fix**
+
+- Added structured `criticalFlags`, `cautionFlags`, and `assumptionFlags` in the
+  calculator view.
+- Rendered critical blockers and actionable cautions as separate visible rows.
+- Moved disclosure/model caveats into a muted, collapsed `Assumptions` details
+  group that can be expanded when the user wants the full basis.
+- Added styling for the tiered flag panel and muted assumption pills.
+- Bumped the shared app version to `0.10.22` and expanded smoke coverage.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `Pump_Calculator_standalone.html`
+- `components/Calculator.jsx`
+- `docs/engineering_change_record.md`
+- `docs/smoke_test_matrix.md`
+- `lib/caseLibrary.js`
+- `scripts/browser-smoke-test.mjs`
+- `scripts/smoke-test.mjs`
+- `styles.css`
+
+**QC Results**
+
+- `npm run test` passed.
+- `npm run verify:formulas` passed.
+- `npm run build:standalone` passed.
+- `npm run test:browser` passed.
+- `git diff --check` passed. Git emitted line-ending normalization warnings
+  for edited text files, but no whitespace errors.
+
+**Remaining Risk**
+
+The live calculator now reduces visual noise from assumptions, but the report
+still intentionally lists all calculation flags for traceability. Visual review
+of the exact flag density on small screens is still recommended before treating
+this as final UI polish.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.21 - High-Impact UX Safety Pass
 
 **Objective**

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.22] - 2026-07-08
+
+- Reworked the live calculator flag strip into severity tiers: critical blockers, actionable cautions, and collapsed model assumptions.
+- Kept no-duty, affinity-limit, low-flow, and NPSH failures prominent while moving disclosure-grade items such as estimated curves, generic K-values, estimated fluid properties, and screening viscosity coefficients into a muted assumptions expander.
+- Added source and browser smoke coverage for tiered flags and collapsed default assumptions; bumped the shared app version to `0.10.22`.
+
 ## [0.10.21] - 2026-07-08
 
 - Added explicit NPSH tick labels on the chart right axis so NPSHa/NPSHr curves are not read against the efficiency scale.
