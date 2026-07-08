@@ -14,6 +14,7 @@ const ids = {
   babel: "c0febb60-0d41-47cc-aaf9-a3b5942f97de",
   pumpMath: "b404ecd9-b288-4427-815e-e4b13247fcd0",
   units: "8f456e12-d559-4e87-a2f2-56f72905b01d",
+  caseLibrary: "c681b12b-54c8-4315-835c-f368d94d0c90",
   duty: "a1735c67-70b2-457f-b8d3-2f872f88a31b",
   pumpChart: "4d3fa8c6-bbc4-472f-a2ec-bc343b2e09c0",
   calculator: "ff9a3d7f-de94-4265-bebe-7c2682515e54",
@@ -53,6 +54,7 @@ const srcReplacements = [
   ["https://unpkg.com/@babel/standalone@7.29.0/babel.min.js", ids.babel],
   ["lib/pumpMath.js", ids.pumpMath],
   ["lib/units.js", ids.units],
+  ["lib/caseLibrary.js", ids.caseLibrary],
   ["lib/duty.js", ids.duty],
   ["components/PumpChart.jsx", ids.pumpChart],
   ["components/Calculator.jsx", ids.calculator],
@@ -75,6 +77,7 @@ function upsertTextAsset(id, file) {
 
 upsertTextAsset(ids.pumpMath, "lib/pumpMath.js");
 upsertTextAsset(ids.units, "lib/units.js");
+upsertTextAsset(ids.caseLibrary, "lib/caseLibrary.js");
 upsertTextAsset(ids.duty, "lib/duty.js");
 upsertTextAsset(ids.pumpChart, "components/PumpChart.jsx");
 upsertTextAsset(ids.calculator, "components/Calculator.jsx");

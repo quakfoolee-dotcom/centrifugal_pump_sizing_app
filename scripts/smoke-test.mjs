@@ -4,11 +4,11 @@ import vm from "node:vm";
 const sandbox = { window: {} };
 vm.createContext(sandbox);
 
-for (const file of ["lib/pumpMath.js", "lib/units.js", "lib/duty.js"]) {
+for (const file of ["lib/pumpMath.js", "lib/units.js", "lib/caseLibrary.js", "lib/duty.js"]) {
   vm.runInContext(readFileSync(file, "utf8"), sandbox, { filename: file });
 }
 
-const { PumpMath: PM, computeDuty, makeUnits } = sandbox.window;
+const { PumpMath: PM, PumpCases, computeDuty, makeUnits } = sandbox.window;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -19,6 +19,18 @@ function assertNear(actual, expected, tolerance, message) {
   if (err > tolerance) {
     throw new Error(`${message}: expected ${expected}, got ${actual} (error ${err})`);
   }
+}
+
+function assertThrows(fn, pattern, message) {
+  try {
+    fn();
+  } catch (err) {
+    if (!pattern.test(err.message)) {
+      throw new Error(`${message}: wrong error "${err.message}"`);
+    }
+    return;
+  }
+  throw new Error(`${message}: expected an error`);
 }
 
 const baseState = {
@@ -65,6 +77,47 @@ const baseState = {
   unitSystem: "SI",
   op: { Q: 110 },
 };
+
+assert(PumpCases.APP_VERSION === "0.10.15", "app version helper should match this release");
+const editedState = {
+  ...baseState,
+  meta: { ...baseState.meta, tag: "LIVE-EDIT", docNo: "" },
+  op: { Q: 123 },
+};
+const caseExport = PumpCases.buildCaseExport(editedState, "Saved Name", "2026-07-08T00:00:00.000Z");
+assert(caseExport.filename === "Saved_Name.pumpcase.json", "current case export should use case name for filename");
+assert(caseExport.payload.state.meta.tag === "LIVE-EDIT", "current case export should serialize live state");
+assert(caseExport.payload.state.op.Q === 123, "current case export should not use stale saved state");
+const singleImport = PumpCases.parseCaseImport(
+  { schema: PumpCases.CASE_SCHEMA, name: "Imported One", state: editedState },
+  "case.json",
+  {},
+  baseState
+);
+assert(singleImport.kind === "case" && singleImport.activeState, "single-case import should load the imported case");
+assert(singleImport.activeState.meta.tag === "LIVE-EDIT", "single-case import should preserve imported metadata");
+const libraryImport = PumpCases.parseCaseImport(
+  { schema: PumpCases.CASE_LIBRARY_SCHEMA, cases: { "Library One": editedState } },
+  "library.json",
+  {},
+  baseState
+);
+assert(libraryImport.kind === "library" && !libraryImport.activeState, "library import should not replace active state");
+assert(libraryImport.cases["Library One"].meta.tag === "LIVE-EDIT", "library import should add valid cases");
+assertThrows(
+  () => PumpCases.parseCaseImport({ foo: { bar: 1 } }, "bad.json", {}, baseState),
+  /pump and sys objects/,
+  "invalid case library should be rejected"
+);
+
+const appHtml = readFileSync("Pump_Calculator.html", "utf8");
+assert(appHtml.includes("lib/caseLibrary.js"), "main app should load case library helper");
+assert(appHtml.includes("v{APP_VERSION}"), "topbar should use shared app version");
+assert(appHtml.includes("onClick={printReport}"), "print button should route through report print handler");
+assert(!appHtml.includes("meta?.docNo || \"CAL-HYD-0142\""), "status bar should not fall back to demo doc number");
+const appCss = readFileSync("styles.css", "utf8");
+assert(appCss.includes("@media print"), "print stylesheet should be present");
+assert(appCss.includes(".view[data-screen-label=\"02 Report\"]"), "print stylesheet should force the report view");
 
 const US = makeUnits("US");
 assertNear(US.conv("flow", 1), 4.402868, 1e-6, "m3/h to gpm conversion");

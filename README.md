@@ -45,6 +45,7 @@ Pump_Calculator_standalone.html    Single self-contained build (offline)
 styles.css                         CAD / engineering styling
 lib/pumpMath.js                    Pump hydraulics engine (SI internally)
 lib/units.js                       SI <-> US display-layer conversion
+lib/caseLibrary.js                 Case JSON export/import helpers and validation
 lib/duty.js                        Shared duty-point/result derivation
 components/PumpChart.jsx            SVG performance chart
 components/Calculator.jsx          Main calculator screen

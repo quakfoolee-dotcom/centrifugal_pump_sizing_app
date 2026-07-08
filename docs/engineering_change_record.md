@@ -25,6 +25,85 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.15 - Case Workflow Hardening And Report Print Control
+
+**Objective**
+
+Close the app-shell audit findings for case export/import correctness,
+print-to-report behavior, metadata display consistency, version labeling, and
+repeatable QC coverage.
+
+**Before Fix**
+
+- Export Case could serialize a stale saved-case snapshot when the visible case
+  had unsaved edits.
+- Case-library import accepted objects whose entries did not actually look like
+  pump sizing cases.
+- Importing a library immediately loaded the first imported case, replacing the
+  active calculation even when the user had unsaved work.
+- Print / PDF called browser print directly, so the active Calculator or
+  Compare tab could print instead of the engineering report.
+- Blank metadata fields could show demo fallback values in calculator/status
+  displays while the report showed the field as blank.
+- The topbar version label remained at `v0.10` while the changelog was already
+  tracking patch releases.
+- Automated smoke coverage did not protect the metadata/import/export app-shell
+  workflow.
+
+**After Fix**
+
+- Added a shared case-library helper for export payloads, import validation,
+  case merging, and version/schema constants.
+- Export Case now always serializes the live `state`; the case name is used only
+  for the download filename.
+- Single-case import still loads the imported case, while case-library import
+  merges valid cases into the saved library without changing the active state.
+- Invalid library entries without `pump` and `sys` objects are skipped when
+  mixed with valid entries or rejected when no valid cases are present.
+- Print / PDF switches to the report view before printing, and print CSS forces
+  the report sheet to print without app chrome.
+- Calculator, status bar, and report metadata displays no longer reinsert demo
+  values when a field is intentionally blank.
+- The topbar uses the current app version constant.
+- Smoke tests now cover case export, case import validation, library import
+  behavior, version wiring, and print stylesheet wiring.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `Pump_Calculator.html`
+- `Pump_Calculator_standalone.html`
+- `README.md`
+- `components/Calculator.jsx`
+- `components/Report.jsx`
+- `docs/engineering_change_record.md`
+- `lib/caseLibrary.js`
+- `scripts/build-standalone.mjs`
+- `scripts/smoke-test.mjs`
+- `styles.css`
+
+**QC Results**
+
+- Added smoke-test coverage for current-state case export.
+- Added smoke-test coverage for valid single-case import and library import.
+- Added smoke-test coverage rejecting invalid case-library JSON.
+- Added smoke-test coverage for topbar version and print stylesheet wiring.
+- `npm run test` passed.
+- `npm run build:standalone` passed.
+- `git diff --check` passed with line-ending warnings only.
+
+**Remaining Risk**
+
+The import/export workflow is intentionally plain JSON for portability. Users
+can still manually edit files into engineering-invalid but structurally valid
+states; calculation warnings and normal QC review remain required after import.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.14 - Report Metadata And Case Portability
 
 **Objective**

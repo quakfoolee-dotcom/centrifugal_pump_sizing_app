@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.15] - 2026-07-08
+
+- Made individual case export serialize the current live app state instead of an older saved-case snapshot.
+- Added stricter case-library import validation so invalid JSON entries without `pump` and `sys` objects are rejected or skipped with a clear message.
+- Changed case-library import to merge saved cases without replacing the active unsaved calculation.
+- Routed Print / PDF through the report view and added print CSS that prints the report sheet instead of the active app tab.
+- Removed demo metadata fallbacks from calculator/status/report displays when fields are intentionally blanked.
+- Updated the topbar version label to the current release and added smoke-test coverage for the app-shell import/export and print wiring.
+
 ## [0.10.14] - 2026-07-08
 
 - Added editable report metadata fields for Project, Tag, Doc No., Revision, Prepared By, and Discipline.

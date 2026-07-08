@@ -31,10 +31,10 @@ const Report = ({ state }) => {
   const fmtPipe = (p, id) => p ? `DN${p.dn} Sch${p.sch} (${U.fmt("dia", id, 1)} ${ud})` : `${U.fmt("dia", id, 1)} ${ud}`;
   const tol = pm.TOLERANCES[pump.tolGrade || "ISO 2B"];
   const meta = {
-    project: "Raw-Water Transfer Skid - Unit 200",
-    tag: "P-101A",
-    docNo: "CAL-HYD-0142",
-    rev: "D",
+    project: "",
+    tag: "",
+    docNo: "",
+    rev: "",
     preparedBy: "",
     discipline: "",
     ...(state.meta || {}),

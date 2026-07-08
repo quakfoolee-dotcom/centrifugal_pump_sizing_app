@@ -211,6 +211,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
   const fluidName = fluid.key === "Custom"
     ? (fluid.customName || "Custom fluid")
     : (fluidPresets[fluid.key] ? fluidPresets[fluid.key].name : fluid.key);
+  const tagLabel = String(meta.tag || "").trim();
 
   return (
     <div className="doc">
@@ -418,7 +419,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         <div className="center-header">
           <div className="title-group">
             <h2>Performance · Pump &amp; System</h2>
-            <span className="meta">TAG  {meta.tag || "P-101A"}  ·  {fluidName}  ·  {arrange === "single" ? "1 pump" : `${nSet}× ${arrange}`}  ·  N={pump.N} rpm  ·  D={pump.D} mm</span>
+            <span className="meta">TAG  {tagLabel}  ·  {fluidName}  ·  {arrange === "single" ? "1 pump" : `${nSet}× ${arrange}`}  ·  N={pump.N} rpm  ·  D={pump.D} mm</span>
           </div>
           <div className="legend">
             <span><span className="sw" style={{borderColor:"var(--ink)"}}></span>H(Q)</span>

@@ -135,6 +135,15 @@ body {
 .case-name { width: 84px; }
 .case-name:focus, .case-sel:focus { outline: none; border-color: var(--accent); background: #fff; }
 .cases .btn { padding: 4px 7px; font-size: 10px; }
+.case-notice {
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--mute);
+  font-family: var(--mono);
+  font-size: 10px;
+}
 
 /* SI/US unit toggle in top bar */
 .unit-seg { width: 68px; height: 24px; }
@@ -653,5 +662,48 @@ table.cmp tbody tr:hover { background: var(--paper-2); }
 
   .report-stage {
     padding: 12px;
+  }
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    background-image: none !important;
+  }
+
+  .topbar,
+  .status,
+  .tweaks {
+    display: none !important;
+  }
+
+  .view {
+    display: none !important;
+    height: auto !important;
+  }
+
+  .view[data-screen-label="02 Report"] {
+    display: block !important;
+  }
+
+  .report-stage {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .sheet {
+    width: auto !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
   }
 }
