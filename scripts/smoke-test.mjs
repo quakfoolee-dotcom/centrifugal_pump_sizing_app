@@ -78,7 +78,7 @@ const baseState = {
   op: { Q: 110 },
 };
 
-assert(PumpCases.APP_VERSION === "0.10.23", "app version helper should match this release");
+assert(PumpCases.APP_VERSION === "0.10.24", "app version helper should match this release");
 const editedState = {
   ...baseState,
   meta: { ...baseState.meta, tag: "LIVE-EDIT", docNo: "" },
@@ -134,6 +134,10 @@ const appCss = readFileSync("styles.css", "utf8");
 assert(appCss.includes("@media print"), "print stylesheet should be present");
 assert(appCss.includes(".view[data-screen-label=\"02 Report\"]"), "print stylesheet should force the report view");
 assert(appCss.includes(".flag-panel") && appCss.includes(".assumption-flags"), "calculator should style tiered calculation flags");
+assert(appCss.includes("grid-template-columns: 340px minmax(0, 1fr) 300px"), "desktop layout should give the input panel enough width");
+assert(appCss.includes("grid-template-columns: 300px minmax(0, 1fr) 260px"), "compact layout should keep a wider input panel");
+assert(appCss.includes("overflow-x: hidden") && appCss.includes(".field > * { min-width: 0; }"), "panel form rows should shrink without horizontal scrollbars");
+assert(/\.btn\s*\{\s*all: unset;\s*box-sizing: border-box;/m.test(appCss), "unset full-width buttons should preserve border-box sizing");
 const standaloneHtml = readFileSync("Pump_Calculator_standalone.html", "utf8");
 const standaloneHeaderCount = (standaloneHtml.match(/Centrifugal Pump Calculator/g) || []).length;
 assert(standaloneHeaderCount <= 1, "standalone build should not accumulate duplicate app CSS header comments");

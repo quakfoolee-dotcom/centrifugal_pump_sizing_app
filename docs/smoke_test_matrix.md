@@ -52,7 +52,7 @@ so it does not depend on CDN access during the test.
 
 ```text
 smoke-test: duty solve, parallel case, and pipe helpers passed
-browser-smoke-test: flags, chart hover, new case, metadata, case import/export, numeric inputs, units, and report print passed
+browser-smoke-test: flags, panel layout, chart hover, new case, metadata, case import/export, numeric inputs, units, and report print passed
 verify-formulas: all 82 first-principles checks passed
 ```
 
@@ -85,6 +85,7 @@ calculation or workflow assertion that failed.
 | Standalone artifact hygiene | Committed standalone HTML does not accumulate duplicate app CSS header comments. |
 | Browser bootstrap | Standalone app loads in headless Chrome/Edge without CDN access and exposes the shared helpers. |
 | Browser flag workflow | Default model assumptions render collapsed, are separate from critical flags, and can be expanded. |
+| Browser panel layout | Active calculator panels have hidden horizontal overflow and no measured horizontal scroll requirement at the tested desktop viewport. |
 | Browser navigation | Calculator, Report preview, and Compare tabs activate through click interactions. |
 | Browser metadata workflow | Report metadata fields are edited through real inputs and verified in the report titleblock. |
 | Browser case workflow | Save to localStorage, current-case JSON download, dirty saved-case load with automatic snapshot, protected New case reset, invalid JSON import alert, valid single-case import, valid library import, and a library containing a case named `state`. |

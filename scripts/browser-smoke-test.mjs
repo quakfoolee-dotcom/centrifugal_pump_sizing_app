@@ -13,7 +13,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const APP_VERSION = "0.10.23";
+const APP_VERSION = "0.10.24";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
@@ -415,6 +415,15 @@ async function main() {
       assumptions?.querySelector('summary')?.click();
       return assumptions?.open && assumptions.textContent.includes('Estimated pump curve');
     })()`), "assumption details should expand to show model caveats");
+    assert(await waitForEval(cdp, sessionId, `(() => {
+      const active = document.querySelector('.view.active');
+      const panels = active ? [...active.querySelectorAll('.panel')] : [];
+      return panels.length > 0
+        && panels.every(panel => {
+          const styles = getComputedStyle(panel);
+          return styles.overflowX === 'hidden' && panel.scrollWidth <= panel.clientWidth + 2;
+        });
+    })()`, "calculator panel horizontal layout"), "active calculator panels should not require horizontal scrolling");
     assert(await evaluate(cdp, sessionId, `(() => {
       const svg = document.querySelector('.chart-wrap svg');
       if (!svg || typeof PointerEvent !== 'function') return false;
@@ -559,7 +568,7 @@ async function main() {
     assert(await waitForEval(cdp, sessionId, `window.__printCalls.at(-1) === '02 Report'`, "report print routing"), "print should route through Report view");
 
     assert(cdp.exceptions.length === 0, `browser runtime exceptions:\n${cdp.exceptions.join("\n")}`);
-    console.log("browser-smoke-test: flags, chart hover, new case, metadata, case import/export, numeric inputs, units, and report print passed");
+    console.log("browser-smoke-test: flags, panel layout, chart hover, new case, metadata, case import/export, numeric inputs, units, and report print passed");
   } finally {
     try { await cdp?.send("Browser.close"); } catch {}
     if (browserRef?.browser && !browserRef.browser.killed) browserRef.browser.kill();

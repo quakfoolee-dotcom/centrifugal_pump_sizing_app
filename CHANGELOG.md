@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.24] - 2026-07-08
+
+- Increased the desktop and compact calculator input-panel widths to prevent the suction/discharge rows from producing horizontal scrollbars.
+- Changed the main/center grid tracks and form-row columns to use shrink-safe `minmax(0, ...)` sizing.
+- Restored `border-box` sizing on reset-style controls so full-width panel buttons and inputs fit inside padded rows.
+- Limited calculator panel overflow to the vertical axis and added source/browser smoke coverage for no horizontal panel scrolling.
+- Regenerated the standalone app and bumped the shared app version to `0.10.24`.
+
 ## [0.10.23] - 2026-07-08
 
 - Added a protected `New` case flow that snapshots dirty work before starting a blank calculation case.

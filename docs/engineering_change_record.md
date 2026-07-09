@@ -25,6 +25,65 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.24 - Calculator Panel Width And Horizontal Scroll Fix
+
+**Objective**
+
+Remove the horizontal scrollbar visible in the calculator input panel near the
+suction/discharge line controls while preserving the three-column engineering
+workbench layout.
+
+**Before Fix**
+
+- The desktop calculator used a 320 px left input panel, and compact density
+  reduced it to 280 px.
+- Several form rows combine labels with fixed-width input/select columns.
+- `.panel` used `overflow: auto`, so small row overflows produced a horizontal
+  scrollbar even when the intended content should fit vertically.
+
+**After Fix**
+
+- Increased the desktop input panel to 340 px and compact density to 300 px.
+- Changed the center grid track and form-row label track to shrink-safe
+  `minmax(0, ...)` sizing.
+- Limited panel scrolling to the vertical axis and set grid children to
+  `min-width: 0` so inputs/selects can shrink within the panel.
+- Restored `box-sizing: border-box` on reset-style inputs, selects, and buttons
+  so full-width controls fit inside padded panel rows.
+- Added source and browser smoke coverage for the layout regression.
+- Bumped the shared app version to `0.10.24` and regenerated the standalone
+  artifact.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `Pump_Calculator_standalone.html`
+- `docs/engineering_change_record.md`
+- `docs/smoke_test_matrix.md`
+- `lib/caseLibrary.js`
+- `scripts/browser-smoke-test.mjs`
+- `scripts/smoke-test.mjs`
+- `styles.css`
+
+**QC Results**
+
+- `npm run test` passed.
+- `npm run verify:formulas` passed.
+- `npm run build:standalone` passed.
+- `npm run test:browser` passed.
+- `git diff --check` passed.
+
+**Remaining Risk**
+
+- The browser smoke test checks the active calculator panels at the default
+  headless desktop viewport. It does not replace manual visual checks for every
+  OS scrollbar style, zoom level, or browser engine.
+
+**Release / Commit**
+
+- Release: `0.10.24`
+- Commit: `0.10.24` release commit.
+
 ### 0.10.23 - New Case Flow And Chart Hover Readout
 
 **Objective**
