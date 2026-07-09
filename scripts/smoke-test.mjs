@@ -78,7 +78,7 @@ const baseState = {
   op: { Q: 110 },
 };
 
-assert(PumpCases.APP_VERSION === "0.10.25", "app version helper should match this release");
+assert(PumpCases.APP_VERSION === "0.10.26", "app version helper should match this release");
 const editedState = {
   ...baseState,
   meta: { ...baseState.meta, tag: "LIVE-EDIT", docNo: "" },
@@ -143,6 +143,10 @@ assert(appHtml.includes("buildNewCaseState") && appHtml.includes("Started new ca
 assert(appHtml.includes("Before ${action}") && appHtml.includes("new case"), "new-case flow should use the snapshot guard");
 assert(appHtml.includes("case-manager-panel") && appHtml.includes("renameSelectedCase") && appHtml.includes("duplicateSelectedCase"), "app shell should provide case-manager rename and duplicate workflows");
 assert(appHtml.includes("copyShareLink") && appHtml.includes("parseCaseLinkHash") && appHtml.includes("buildCaseLinkHash"), "app shell should provide shareable case links");
+assert(appHtml.includes('role="tablist"') && appHtml.includes('role="tab"') && appHtml.includes("aria-selected"), "main views should use accessible tab semantics");
+assert(appHtml.includes("onTabKeyDown") && appHtml.includes("ArrowRight") && appHtml.includes("aria-controls={tab.panelId}"), "main tabs should support keyboard navigation");
+assert(appHtml.includes("buildPrintTitle") && appHtml.includes("document.title = nextTitle") && appHtml.includes("afterprint"), "report print should set a project-specific PDF title and restore it after print");
+assert(appHtml.includes("caseManagerPanelRef") && appHtml.includes('event.key === "Escape"'), "case manager should support focus management and Escape close");
 const appCss = readFileSync("styles.css", "utf8");
 assert(appCss.includes("@media print"), "print stylesheet should be present");
 assert(appCss.includes(".view[data-screen-label=\"02 Report\"]"), "print stylesheet should force the report view");
@@ -152,6 +156,7 @@ assert(appCss.includes("grid-template-columns: 300px minmax(0, 1fr) 260px"), "co
 assert(appCss.includes("overflow-x: hidden") && appCss.includes(".field > * { min-width: 0; }"), "panel form rows should shrink without horizontal scrollbars");
 assert(/\.btn\s*\{\s*all: unset;\s*box-sizing: border-box;/m.test(appCss), "unset full-width buttons should preserve border-box sizing");
 assert(appCss.includes(".case-manager-backdrop") && appCss.includes(".case-manager-row.active"), "case-manager layout should be styled");
+assert(appCss.includes(".tab:focus-visible") && appCss.includes(".cat-del:focus-visible"), "keyboard focus should be visible on tabs and icon buttons");
 const standaloneHtml = readFileSync("Pump_Calculator_standalone.html", "utf8");
 const standaloneHeaderCount = (standaloneHtml.match(/Centrifugal Pump Calculator/g) || []).length;
 assert(standaloneHeaderCount <= 1, "standalone build should not accumulate duplicate app CSS header comments");
@@ -165,6 +170,9 @@ const calculatorJsx = readFileSync("components/Calculator.jsx", "utf8");
 assert(calculatorJsx.includes("parseFieldDisplay") && calculatorJsx.includes("inputMode=\"decimal\""), "numeric fields should keep focused draft text and parse decimal input on commit");
 assert(calculatorJsx.includes("criticalFlags") && calculatorJsx.includes("cautionFlags") && calculatorJsx.includes("assumptionFlags"), "calculator should classify calculation flags by severity");
 assert(calculatorJsx.includes("data-flag-tier=\"critical\"") && calculatorJsx.includes("data-flag-tier=\"assumption\""), "calculator should render severity-tiered flag groups");
+assert(calculatorJsx.includes("Remove fitting row") && calculatorJsx.includes("Remove catalog point"), "icon-only calculator delete buttons should have accessible labels");
+const compareJsx = readFileSync("components/Compare.jsx", "utf8");
+assert(compareJsx.includes("Remove comparison slot"), "icon-only compare delete button should have an accessible label");
 
 const US = makeUnits("US");
 assertNear(US.conv("flow", 1), 4.402868, 1e-6, "m3/h to gpm conversion");

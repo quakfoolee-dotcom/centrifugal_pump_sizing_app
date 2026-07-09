@@ -123,7 +123,7 @@ const FittingsTable = ({ list, onChange }) => {
           <span className="mono" style={{fontSize:10, color:"var(--mute)", textAlign:"right"}}>
             {(F[r.type] ? F[r.type].K * (r.qty || 0) : 0).toFixed(2)}
           </span>
-          <button className="cat-del" onClick={() => delRow(i)} title="remove">×</button>
+          <button className="cat-del" onClick={() => delRow(i)} title="remove" aria-label={`Remove fitting row ${i + 1}`}>×</button>
         </div>
       ))}
       <button className="btn" style={{marginTop:2, width:"100%"}} onClick={addRow}>+ add fitting</button>
@@ -430,7 +430,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
                   <input className="cat-in" type="number" value={r.h ?? ""}     step={0.5}  onChange={e => setCat(i, "h", parseFloat(e.target.value))}/>
                   <input className="cat-in" type="number" value={r.eta ?? ""}   step={0.01} onChange={e => setCat(i, "eta", parseFloat(e.target.value))}/>
                   <input className="cat-in" type="number" value={r.npshr ?? ""} step={0.1}  onChange={e => setCat(i, "npshr", parseFloat(e.target.value))}/>
-                  <button className="cat-del" onClick={() => delCat(i)} title="remove row">×</button>
+                  <button className="cat-del" onClick={() => delCat(i)} title="remove row" aria-label={`Remove catalog point ${i + 1}`}>×</button>
                 </div>
               ))}
               <button className="btn" style={{marginTop:4, width:"100%"}} onClick={addCat}>+ add point</button>

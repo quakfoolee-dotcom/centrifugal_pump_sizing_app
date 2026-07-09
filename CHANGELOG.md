@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.26] - 2026-07-09
+
+- Converted the main view tabs from clickable `div` elements to accessible button tabs with ARIA tablist semantics and arrow-key navigation.
+- Added visible keyboard focus styling and accessible labels for icon-only delete controls in the calculator and compare views.
+- Added Escape-key close and focus management for the case manager dialog.
+- Set the browser document title from report metadata during report printing so saved PDFs get project-specific filenames, then restore the app title after printing.
+- Added source and browser smoke coverage for accessible tab wiring, dialog Escape behavior, icon-button labels, and print-title handling; bumped the shared app version to `0.10.26`.
+
 ## [0.10.25] - 2026-07-09
 
 - Added a dedicated case manager dialog with saved-case list, rename, duplicate, delete, selected-case export, full-library export, and JSON import actions.

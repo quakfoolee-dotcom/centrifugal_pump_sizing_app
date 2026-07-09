@@ -25,6 +25,77 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.26 - Accessibility And Report PDF Filename
+
+**Objective**
+
+Implement UX priority ranks 11 and 12: improve keyboard/accessibility behavior
+in the app shell and make printed report/PDF files use project-specific names.
+
+**Before Fix**
+
+- The main view tabs were clickable `div` elements, so they were not native
+  keyboard controls and did not expose tab semantics to assistive technology.
+- Icon-only delete buttons in fitting, catalog, and compare rows relied on the
+  visible `x` glyph and did not provide descriptive accessible names.
+- The case manager dialog did not support Escape-to-close or deliberate focus
+  entry/return behavior.
+- The print workflow always used the generic document title
+  `Centrifugal Pump - Calculator`, so saved PDFs received generic filenames.
+
+**After Fix**
+
+- Converted the main view navigation to `button` tabs with `role="tablist"`,
+  `role="tab"`, `aria-selected`, `aria-controls`, and matching tab panels.
+- Added arrow-key, Home, and End navigation between the main tabs.
+- Added visible focus styling for tabs, buttons, icon delete controls, and case
+  manager rows.
+- Added explicit `aria-label` text to icon-only delete buttons in the
+  calculator and compare views.
+- Added case-manager dialog focus entry, focus return, and Escape-to-close
+  behavior.
+- Added a metadata-based print title, using document number, revision, tag, and
+  project name during `window.print()`, then restoring the original app title on
+  `afterprint`.
+- Bumped the shared app version to `0.10.26` and regenerated the standalone
+  artifact.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `Pump_Calculator.html`
+- `Pump_Calculator_standalone.html`
+- `components/Calculator.jsx`
+- `components/Compare.jsx`
+- `docs/engineering_change_record.md`
+- `docs/smoke_test_matrix.md`
+- `lib/caseLibrary.js`
+- `scripts/browser-smoke-test.mjs`
+- `scripts/smoke-test.mjs`
+- `styles.css`
+
+**QC Results**
+
+- `npm run test` passed.
+- `npm run verify:formulas` passed.
+- `npm run build:standalone` passed.
+- `npm run test:browser` passed.
+- `git diff --check` passed.
+
+**Remaining Risk**
+
+- Browser print dialogs still control the final save-location UI. The app can
+  set the document title that browsers normally use for default PDF names, but
+  it cannot force the operating-system filename if the user edits it.
+- The smoke test checks tab semantics, keyboard tab navigation, Escape close,
+  and print-title timing in the local Chrome/Edge automation path; it is not a
+  full assistive-technology audit.
+
+**Release / Commit**
+
+- Release: `0.10.26`
+- Commit: `0.10.26` release commit.
+
 ### 0.10.25 - Case Manager And Shareable Links
 
 **Objective**
@@ -90,7 +161,7 @@ make individual calculation scenarios shareable from a static GitHub Pages app.
 **Release / Commit**
 
 - Release: `0.10.25`
-- Commit: pending.
+- Commit: `ee7accd`
 
 ### 0.10.24 - Calculator Panel Width And Horizontal Scroll Fix
 

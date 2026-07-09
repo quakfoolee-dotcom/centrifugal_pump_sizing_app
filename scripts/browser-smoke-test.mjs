@@ -13,7 +13,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const APP_VERSION = "0.10.25";
+const APP_VERSION = "0.10.26";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
@@ -279,6 +279,7 @@ function setupPageHarnessScript() {
     window.__confirms = [];
     window.__confirmResult = true;
     window.__printCalls = [];
+    window.__printTitles = [];
     window.alert = (message) => window.__alerts.push(String(message));
     window.confirm = (message) => {
       window.__confirms.push(String(message));
@@ -286,6 +287,8 @@ function setupPageHarnessScript() {
     };
     window.print = () => {
       window.__printCalls.push(document.querySelector('.view.active')?.dataset.screenLabel || '');
+      window.__printTitles.push(document.title);
+      window.dispatchEvent(new Event('afterprint'));
     };
     return true;
   })()`;
@@ -403,6 +406,23 @@ async function main() {
     await evaluate(cdp, sessionId, setupPageHarnessScript());
 
     assert(await waitForEval(cdp, sessionId, `window.PumpCases.APP_VERSION === ${JSON.stringify(APP_VERSION)}`, "app version"), "app version should match release");
+    assert(await waitForEval(cdp, sessionId, `(() => {
+      const tabs = [...document.querySelectorAll('[role="tab"]')];
+      return document.querySelector('.topbar-tabs')?.getAttribute('role') === 'tablist'
+        && tabs.length === 3
+        && tabs.every(tab => tab.tagName === 'BUTTON' && tab.hasAttribute('aria-controls'))
+        && document.getElementById('tab-calc')?.getAttribute('aria-selected') === 'true';
+    })()`, "accessible view tabs"), "main views should expose accessible tab semantics");
+    assert(await evaluate(cdp, sessionId, `(() => {
+      const tab = document.getElementById('tab-calc');
+      if (!tab) return false;
+      tab.focus();
+      tab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      return true;
+    })()`), "tab arrow-key event should dispatch");
+    assert(await waitForEval(cdp, sessionId, `document.querySelector('.view.active')?.dataset.screenLabel === '02 Report'
+      && document.getElementById('tab-report')?.getAttribute('aria-selected') === 'true'`, "keyboard tab navigation"), "ArrowRight should move from Calculator to Report tab");
+    assert(await evaluate(cdp, sessionId, clickTextScript("01 Calculator")), "Calculator tab should be clickable after keyboard tab test");
     assert(await waitForEval(cdp, sessionId, `(() => {
       const assumptions = document.querySelector('[data-flag-tier="assumption"]');
       return assumptions
@@ -586,7 +606,11 @@ async function main() {
       return cases['Browser Library A Renamed']?.meta?.tag === 'P-LIBRARY'
         && !cases['Browser Library A Renamed copy'];
     })()`, "case-manager delete"), "case manager should delete the selected duplicate after confirmation");
-    assert(await evaluate(cdp, sessionId, clickTextScript("Close")), "case manager Close should be clickable");
+    assert(await evaluate(cdp, sessionId, `(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      return true;
+    })()`), "case manager Escape key should dispatch");
+    assert(await waitForEval(cdp, sessionId, `!document.querySelector('.case-manager-panel')`, "case manager Escape close"), "Escape should close the case manager");
 
     assert(await evaluate(cdp, sessionId, clickTextScript("US")), "US unit toggle should be clickable");
     assert(await waitForEval(cdp, sessionId, `document.querySelector('.brand-sub')?.textContent.includes('US')`, "US unit label"), "unit toggle should update the app shell");
@@ -605,9 +629,17 @@ async function main() {
     assert(await waitForEval(cdp, sessionId, `document.querySelector('.view.active')?.dataset.screenLabel === '03 Compare'`, "compare view before print"), "Compare view should be active before print test");
     assert(await evaluate(cdp, sessionId, clickTextScript("Print Report / PDF")), "Print Report / PDF button should be clickable");
     assert(await waitForEval(cdp, sessionId, `window.__printCalls.at(-1) === '02 Report'`, "report print routing"), "print should route through Report view");
+    assert(await waitForEval(cdp, sessionId, `(() => {
+      const title = window.__printTitles.at(-1) || '';
+      return title.includes('CAL-BROWSER-001')
+        && title.includes('Rev T0')
+        && title.includes('P-IMPORTED')
+        && document.title.includes('Centrifugal Pump')
+        && document.title.includes('Calculator');
+    })()`, "report print title"), "print should use report metadata as the temporary PDF title and then restore the app title");
 
     assert(cdp.exceptions.length === 0, `browser runtime exceptions:\n${cdp.exceptions.join("\n")}`);
-    console.log("browser-smoke-test: flags, panel layout, chart hover, new case, case manager, share link, metadata, case import/export, numeric inputs, units, and report print passed");
+    console.log("browser-smoke-test: flags, panel layout, accessible tabs, chart hover, new case, case manager, share link, metadata, case import/export, numeric inputs, units, and report print title passed");
   } finally {
     try { await cdp?.send("Browser.close"); } catch {}
     if (browserRef?.browser && !browserRef.browser.killed) browserRef.browser.kill();

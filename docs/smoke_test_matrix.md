@@ -52,7 +52,7 @@ so it does not depend on CDN access during the test.
 
 ```text
 smoke-test: duty solve, parallel case, and pipe helpers passed
-browser-smoke-test: flags, panel layout, chart hover, new case, case manager, share link, metadata, case import/export, numeric inputs, units, and report print passed
+browser-smoke-test: flags, panel layout, accessible tabs, chart hover, new case, case manager, share link, metadata, case import/export, numeric inputs, units, and report print title passed
 verify-formulas: all 82 first-principles checks passed
 ```
 
@@ -81,9 +81,11 @@ calculation or workflow assertion that failed.
 | Chart hover readout | Passive chart hover readout is wired for Q, pump/system head, efficiency, and NPSH values. |
 | Warning UX wiring | Calculator flags are grouped by critical, caution, and collapsed model-assumption tiers. |
 | Numeric input UX | Focused draft text is preserved, comma decimals are accepted on commit, and numeric field parsing is covered in the browser workflow. |
-| App shell wiring | Main app loads the case helper, topbar uses the shared version, report-print handler is wired, report-print label is explicit, metadata status fallback is removed, dirty work is protected before destructive case transitions, and print CSS targets the report view. |
+| App shell wiring | Main app loads the case helper, topbar uses the shared version, accessible tab semantics are wired, report-print handler is wired with metadata-based print title handling, report-print label is explicit, metadata status fallback is removed, dirty work is protected before destructive case transitions, and print CSS targets the report view. |
+| Accessibility wiring | Main view tabs expose ARIA tab roles, support keyboard arrow navigation, icon-only delete buttons have accessible labels, and focus-visible styling is present. |
 | Standalone artifact hygiene | Committed standalone HTML does not accumulate duplicate app CSS header comments. |
 | Browser bootstrap | Standalone app loads in headless Chrome/Edge without CDN access and exposes the shared helpers. |
+| Browser accessibility workflow | Main view tabs expose tablist semantics and respond to keyboard arrow navigation; the case manager closes with Escape. |
 | Browser flag workflow | Default model assumptions render collapsed, are separate from critical flags, and can be expanded. |
 | Browser panel layout | Active calculator panels have hidden horizontal overflow and no measured horizontal scroll requirement at the tested desktop viewport. |
 | Browser navigation | Calculator, Report preview, and Compare tabs activate through click interactions. |
@@ -94,7 +96,7 @@ calculation or workflow assertion that failed.
 | Browser chart workflow | Passive hover readout appears when a pointer-move event is dispatched over the chart. |
 | Browser numeric workflow | Partial decimal draft preservation and comma-decimal parsing for a real calculator input. |
 | Browser unit workflow | SI to US toggle updates the visible app shell. |
-| Browser print workflow | `Print Report / PDF` routes from Compare to Report before invoking `window.print()`. |
+| Browser print workflow | `Print Report / PDF` routes from Compare to Report, temporarily sets a metadata-based document title for PDF filenames, then restores the app title. |
 
 ## Not Covered Yet
 

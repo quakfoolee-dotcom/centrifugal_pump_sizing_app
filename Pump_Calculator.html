@@ -136,6 +136,21 @@ function buildNewCaseState() {
   });
 }
 
+function cleanTitlePart(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, " ");
+}
+
+function buildPrintTitle(meta = {}) {
+  const docNo = cleanTitlePart(meta.docNo) || "Pump Calculation";
+  const rev = cleanTitlePart(meta.rev);
+  const tag = cleanTitlePart(meta.tag);
+  const project = cleanTitlePart(meta.project);
+  return [docNo, rev ? `Rev ${rev}` : "", tag, project].filter(Boolean).join(" - ");
+}
+
 function App() {
   const [state, setState] = useState(initialState);
   const baselineRef = useRef(serializeCaseState(initialState));
@@ -148,6 +163,8 @@ function App() {
   const [caseManagerOpen, setCaseManagerOpen] = useState(false);
   const [managerSelection, setManagerSelection] = useState("");
   const [managerDraftName, setManagerDraftName] = useState("");
+  const caseManagerPanelRef = useRef(null);
+  const restorePrintTitleRef = useRef(null);
 
   useEffect(() => { document.documentElement.dataset.density = density; document.body.dataset.density = density; }, [density]);
 
@@ -216,6 +233,27 @@ function App() {
   useEffect(() => {
     try { setCases(JSON.parse(localStorage.getItem("pumpcalc:cases") || "{}")); } catch {}
   }, []);
+  useEffect(() => {
+    if (!caseManagerOpen) return;
+    const previousFocus = document.activeElement;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setCaseManagerOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.setTimeout(() => {
+      const target = caseManagerPanelRef.current?.querySelector("button, input, select");
+      target?.focus();
+    }, 0);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      if (previousFocus && typeof previousFocus.focus === "function") {
+        window.setTimeout(() => previousFocus.focus(), 0);
+      }
+    };
+  }, [caseManagerOpen]);
   const writeCases = (next) => { setCases(next); localStorage.setItem("pumpcalc:cases", JSON.stringify(next)); };
   const selectManagerCase = (name) => {
     setManagerSelection(name);
@@ -388,12 +426,44 @@ function App() {
     setCaseNotice(copied ? "Copied share link." : "Share link is ready in the address bar.");
   };
   const printReport = () => {
+    if (restorePrintTitleRef.current) restorePrintTitleRef.current();
+    const previousTitle = document.title;
+    const nextTitle = buildPrintTitle(state.meta);
+    const restoreTitle = () => {
+      document.title = previousTitle;
+      window.removeEventListener("afterprint", restoreTitle);
+      if (restorePrintTitleRef.current === restoreTitle) restorePrintTitleRef.current = null;
+    };
+    restorePrintTitleRef.current = restoreTitle;
+    document.title = nextTitle;
+    window.addEventListener("afterprint", restoreTitle, { once: true });
     setView("report");
     window.setTimeout(() => window.print(), 0);
   };
 
   const caseNames = Object.keys(cases);
   const selectedManagedCase = managerSelection ? cases[managerSelection] : null;
+  const viewTabs = [
+    { key: "calc", num: "01", label: "Calculator", panelId: "panel-calc" },
+    { key: "report", num: "02", label: "Report preview", panelId: "panel-report" },
+    { key: "compare", num: "03", label: "Compare", panelId: "panel-compare" },
+  ];
+  const focusTab = (key) => {
+    window.requestAnimationFrame(() => document.getElementById(`tab-${key}`)?.focus());
+  };
+  const onTabKeyDown = (event) => {
+    const currentIndex = viewTabs.findIndex(tab => tab.key === view);
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % viewTabs.length;
+    else if (event.key === "ArrowLeft") nextIndex = (currentIndex + viewTabs.length - 1) % viewTabs.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = viewTabs.length - 1;
+    else return;
+    event.preventDefault();
+    const nextView = viewTabs[nextIndex].key;
+    setView(nextView);
+    focusTab(nextView);
+  };
 
   return (
     <div>
@@ -405,16 +475,21 @@ function App() {
             <div className="brand-sub mono">v{APP_VERSION} — {state.unitSystem || "SI"}</div>
           </div>
         </div>
-        <div className="topbar-tabs">
-          <div className={"tab" + (view === "calc" ? " active" : "")} onClick={() => setView("calc")}>
-            <span className="tab-num">01</span> Calculator
-          </div>
-          <div className={"tab" + (view === "report" ? " active" : "")} onClick={() => setView("report")}>
-            <span className="tab-num">02</span> Report preview
-          </div>
-          <div className={"tab" + (view === "compare" ? " active" : "")} onClick={() => setView("compare")}>
-            <span className="tab-num">03</span> Compare
-          </div>
+        <div className="topbar-tabs" role="tablist" aria-label="Main views">
+          {viewTabs.map(tab => (
+            <button key={tab.key}
+                    id={`tab-${tab.key}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={view === tab.key}
+                    aria-controls={tab.panelId}
+                    tabIndex={view === tab.key ? 0 : -1}
+                    className={"tab" + (view === tab.key ? " active" : "")}
+                    onClick={() => setView(tab.key)}
+                    onKeyDown={onTabKeyDown}>
+              <span className="tab-num">{tab.num}</span> {tab.label}
+            </button>
+          ))}
         </div>
         <div className="topbar-right">
           <div className="seg unit-seg">
@@ -447,10 +522,15 @@ function App() {
 
       {caseManagerOpen && (
         <div className="case-manager-backdrop" role="presentation" onClick={(e) => e.target === e.currentTarget && setCaseManagerOpen(false)}>
-          <section className="case-manager-panel" role="dialog" aria-modal="true" aria-label="Case manager">
+          <section ref={caseManagerPanelRef}
+                   className="case-manager-panel"
+                   role="dialog"
+                   aria-modal="true"
+                   aria-labelledby="case-manager-title"
+                   tabIndex={-1}>
             <div className="case-manager-head">
               <div>
-                <div className="case-manager-title">Case manager</div>
+                <div id="case-manager-title" className="case-manager-title">Case manager</div>
                 <div className="case-manager-sub mono">{caseNames.length} saved case{caseNames.length === 1 ? "" : "s"}</div>
               </div>
               <button className="btn" onClick={() => setCaseManagerOpen(false)} aria-label="Close case manager">Close</button>
@@ -497,13 +577,28 @@ function App() {
         </div>
       )}
 
-      <div className={"view" + (view === "calc" ? " active" : "")} data-screen-label="01 Calculator">
+      <div id="panel-calc"
+           role="tabpanel"
+           aria-labelledby="tab-calc"
+           hidden={view !== "calc"}
+           className={"view" + (view === "calc" ? " active" : "")}
+           data-screen-label="01 Calculator">
         <window.Calculator state={state} setState={setState} />
       </div>
-      <div className={"view" + (view === "report" ? " active" : "")} data-screen-label="02 Report">
+      <div id="panel-report"
+           role="tabpanel"
+           aria-labelledby="tab-report"
+           hidden={view !== "report"}
+           className={"view" + (view === "report" ? " active" : "")}
+           data-screen-label="02 Report">
         <window.Report state={state} />
       </div>
-      <div className={"view" + (view === "compare" ? " active" : "")} data-screen-label="03 Compare">
+      <div id="panel-compare"
+           role="tabpanel"
+           aria-labelledby="tab-compare"
+           hidden={view !== "compare"}
+           className={"view" + (view === "compare" ? " active" : "")}
+           data-screen-label="03 Compare">
         <window.Compare liveState={state} cases={cases} unitSystem={state.unitSystem || "SI"} />
       </div>
 

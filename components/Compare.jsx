@@ -151,7 +151,7 @@ const Compare = ({ liveState, cases, unitSystem }) => {
                       value={name} onChange={e => setSlot(i, e.target.value)}>
                 {names.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
-              {sel.length > 2 && <button className="cat-del" onClick={() => rmSlot(i)}>×</button>}
+              {sel.length > 2 && <button className="cat-del" onClick={() => rmSlot(i)} aria-label={`Remove comparison slot ${i + 1}`}>×</button>}
             </div>
           ))}
           {sel.length < 3 && names.length > sel.length &&
