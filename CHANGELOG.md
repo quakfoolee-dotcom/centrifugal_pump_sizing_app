@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.23] - 2026-07-08
+
+- Added a protected `New` case flow that snapshots dirty work before starting a blank calculation case.
+- New cases now start with blank report metadata and neutral system defaults instead of carrying demo project/static-head values forward.
+- Added a passive chart hover readout for Q, pump head, system head, efficiency, NPSHa, and NPSHr without moving the target-flow crosshair.
+- Added source and browser smoke coverage for new-case protection and chart hover readout; bumped the shared app version to `0.10.23`.
+
 ## [0.10.22] - 2026-07-08
 
 - Reworked the live calculator flag strip into severity tiers: critical blockers, actionable cautions, and collapsed model assumptions.

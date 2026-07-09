@@ -13,7 +13,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const APP_VERSION = "0.10.22";
+const APP_VERSION = "0.10.23";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
@@ -415,6 +415,20 @@ async function main() {
       assumptions?.querySelector('summary')?.click();
       return assumptions?.open && assumptions.textContent.includes('Estimated pump curve');
     })()`), "assumption details should expand to show model caveats");
+    assert(await evaluate(cdp, sessionId, `(() => {
+      const svg = document.querySelector('.chart-wrap svg');
+      if (!svg || typeof PointerEvent !== 'function') return false;
+      const rect = svg.getBoundingClientRect();
+      svg.dispatchEvent(new PointerEvent('pointermove', {
+        bubbles: true,
+        clientX: rect.left + rect.width * 0.46,
+        clientY: rect.top + rect.height * 0.48,
+        pointerId: 81,
+        pointerType: 'mouse',
+      }));
+      return true;
+    })()`), "chart hover event should be dispatchable");
+    assert(await waitForEval(cdp, sessionId, `document.querySelector('[data-hover-readout]')?.textContent.includes('CURVE READOUT')`, "chart hover readout"), "chart hover should show passive curve values");
     assert(await evaluate(cdp, sessionId, clickTextScript("03 Compare")), "Compare tab should be clickable");
     assert(await waitForEval(cdp, sessionId, `document.querySelector('.view.active')?.dataset.screenLabel === '03 Compare'`, "compare view"), "Compare view should become active");
     assert(await evaluate(cdp, sessionId, clickTextScript("02 Report")), "Report tab should be clickable");
@@ -461,6 +475,25 @@ async function main() {
         && cases[snapshotName]?.meta?.tag === 'P-BROWSER-EDIT'
         && [...document.querySelectorAll('.text-field input')][1]?.value === 'P-BROWSER';
     })()`, "dirty load snapshot"), "loading a saved case should protect unsaved current work with a snapshot");
+
+    await setMetadata(cdp, sessionId, 1, "P-BROWSER-NEW-DIRTY");
+    assert(await evaluate(cdp, sessionId, clickTextScript("New")), "New button should be clickable");
+    assert(await waitForEval(cdp, sessionId, `(() => {
+      const cases = JSON.parse(localStorage.getItem('pumpcalc:cases') || '{}');
+      const active = JSON.parse(localStorage.getItem('pumpcalc:v4') || '{}');
+      const baseline = JSON.parse(localStorage.getItem('pumpcalc:baseline') || '{}');
+      const snapshotName = Object.keys(cases).find(name => name.startsWith('Before new case '));
+      const fields = [...document.querySelectorAll('.text-field input')].map(input => input.value);
+      return window.__confirms.some(message => message.includes('Before new case'))
+        && snapshotName
+        && cases[snapshotName]?.meta?.tag === 'P-BROWSER-NEW-DIRTY'
+        && fields.slice(0, 6).every(value => value === '')
+        && document.querySelector('.case-name')?.value === 'New case'
+        && active?.meta?.tag === ''
+        && active?.sys?.Zd === 0
+        && Array.isArray(active?.sys?.fitD) && active.sys.fitD.length === 0
+        && baseline?.meta?.tag === '';
+    })()`, "new case flow"), "New should protect dirty work and start a blank calculation case");
 
     const invalidPath = path.join(uploadDir, "invalid-library.json");
     writeFileSync(invalidPath, JSON.stringify({ foo: { bar: 1 } }), "utf8");
@@ -526,7 +559,7 @@ async function main() {
     assert(await waitForEval(cdp, sessionId, `window.__printCalls.at(-1) === '02 Report'`, "report print routing"), "print should route through Report view");
 
     assert(cdp.exceptions.length === 0, `browser runtime exceptions:\n${cdp.exceptions.join("\n")}`);
-    console.log("browser-smoke-test: flags, tabs, metadata, dirty-load snapshots, case import/export, numeric inputs, units, and report print passed");
+    console.log("browser-smoke-test: flags, chart hover, new case, metadata, case import/export, numeric inputs, units, and report print passed");
   } finally {
     try { await cdp?.send("Browser.close"); } catch {}
     if (browserRef?.browser && !browserRef.browser.killed) browserRef.browser.kill();

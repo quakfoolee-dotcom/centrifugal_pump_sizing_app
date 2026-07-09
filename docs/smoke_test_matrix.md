@@ -52,7 +52,7 @@ so it does not depend on CDN access during the test.
 
 ```text
 smoke-test: duty solve, parallel case, and pipe helpers passed
-browser-smoke-test: flags, tabs, metadata, dirty-load snapshots, case import/export, numeric inputs, units, and report print passed
+browser-smoke-test: flags, chart hover, new case, metadata, case import/export, numeric inputs, units, and report print passed
 verify-formulas: all 82 first-principles checks passed
 ```
 
@@ -78,6 +78,7 @@ calculation or workflow assertion that failed.
 | Fluid property flags | Estimated non-water preset flag and mineral-acid handling for sulfuric acid-style fluids. |
 | Case workflow | Current-state case export, valid single-case import, case-library import without active-state replacement, invalid library rejection, and dirty-load snapshot protection. |
 | Chart UX wiring | Explicit NPSH tick scale, target-flow label, solved-duty label, and pointer-event drag wiring. |
+| Chart hover readout | Passive chart hover readout is wired for Q, pump/system head, efficiency, and NPSH values. |
 | Warning UX wiring | Calculator flags are grouped by critical, caution, and collapsed model-assumption tiers. |
 | Numeric input UX | Focused draft text is preserved, comma decimals are accepted on commit, and numeric field parsing is covered in the browser workflow. |
 | App shell wiring | Main app loads the case helper, topbar uses the shared version, report-print handler is wired, report-print label is explicit, metadata status fallback is removed, dirty work is protected before destructive case transitions, and print CSS targets the report view. |
@@ -86,7 +87,8 @@ calculation or workflow assertion that failed.
 | Browser flag workflow | Default model assumptions render collapsed, are separate from critical flags, and can be expanded. |
 | Browser navigation | Calculator, Report preview, and Compare tabs activate through click interactions. |
 | Browser metadata workflow | Report metadata fields are edited through real inputs and verified in the report titleblock. |
-| Browser case workflow | Save to localStorage, current-case JSON download, dirty saved-case load with automatic snapshot, invalid JSON import alert, valid single-case import, valid library import, and a library containing a case named `state`. |
+| Browser case workflow | Save to localStorage, current-case JSON download, dirty saved-case load with automatic snapshot, protected New case reset, invalid JSON import alert, valid single-case import, valid library import, and a library containing a case named `state`. |
+| Browser chart workflow | Passive hover readout appears when a pointer-move event is dispatched over the chart. |
 | Browser numeric workflow | Partial decimal draft preservation and comma-decimal parsing for a real calculator input. |
 | Browser unit workflow | SI to US toggle updates the visible app shell. |
 | Browser print workflow | `Print Report / PDF` routes from Compare to Report before invoking `window.print()`. |

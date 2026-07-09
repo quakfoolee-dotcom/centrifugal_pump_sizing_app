@@ -25,6 +25,71 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.23 - New Case Flow And Chart Hover Readout
+
+**Objective**
+
+Implement the next two UX priorities: provide a deliberate clean-start workflow
+for real project cases, and add passive chart inspection so users do not have to
+drag the target crosshair just to read curve values.
+
+**Before Fix**
+
+- Users had to overwrite the demo case to start real work, which could leave
+  stale demo metadata or static-head values in project calculations.
+- Starting over required manually editing many fields or clearing browser
+  storage.
+- The chart only exposed detailed curve values through the draggable target
+  marker, which also changes the selected/VFD target flow.
+
+**After Fix**
+
+- Added a topbar `New` button beside Save.
+- Reused the existing dirty-work guard so starting a new case can create a
+  `Before new case` snapshot before replacing the active calculation.
+- Added `buildNewCaseState()` with blank report metadata, neutral static/vessel
+  heads, zero line lengths, empty fitting lists, and the default pump/fluid basis.
+- Marked the new case as the clean baseline so autosave does not immediately
+  treat it as dirty.
+- Added a passive chart hover readout showing Q, pump head, system head,
+  efficiency, NPSHa, and NPSHr without moving the target-flow crosshair.
+- Bumped the shared app version to `0.10.23` and expanded smoke coverage.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `Pump_Calculator.html`
+- `Pump_Calculator_standalone.html`
+- `README.md`
+- `components/PumpChart.jsx`
+- `docs/engineering_change_record.md`
+- `docs/smoke_test_matrix.md`
+- `lib/caseLibrary.js`
+- `scripts/browser-smoke-test.mjs`
+- `scripts/smoke-test.mjs`
+
+**QC Results**
+
+- `npm run test` passed.
+- `npm run verify:formulas` passed.
+- `npm run build:standalone` passed.
+- `npm run test:browser` passed.
+- `git diff --check` passed. Git emitted line-ending normalization warnings
+  for edited text files, but no whitespace errors.
+
+**Remaining Risk**
+
+The hover readout is covered through DOM-level browser smoke testing, but full
+visual inspection across small screens and touch devices remains a separate UI
+review item. The New flow resets core project/system inputs but does not yet
+provide a full case-management panel with rename/duplicate/export-selected.
+
+**Release / Commit**
+
+- Commit: this `main` release commit
+- Branch: `main`
+- Date: 2026-07-08
+
 ### 0.10.22 - Tiered Calculation Flags
 
 **Objective**

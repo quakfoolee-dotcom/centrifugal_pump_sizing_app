@@ -104,17 +104,51 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
 
   const svgRef = React.useRef(null);
   const activePointer = React.useRef(null);
+  const [hover, setHover] = React.useState(null);
   // Pointer handlers read this ref so Qmax/M/iw can change without stale event math.
   const latest = React.useRef();
   latest.current = { Qmax, M, iw, W, setOp };
 
-  const toQ = (clientX) => {
+  const toPlotPoint = (clientX, clientY) => {
     const { Qmax, M, iw, W } = latest.current;
     const r = svgRef.current.getBoundingClientRect();
     const x = ((clientX - r.left) / r.width) * W;
+    const y = ((clientY - r.top) / r.height) * H;
+    const inside = x >= M.l && x <= M.l + iw && y >= M.t && y <= M.t + ih;
     let q = ((x - M.l) / iw) * Qmax;
-    q = Math.max(1, Math.min(Qmax * 0.98, q));
-    return q;
+    q = Math.max(0, Math.min(Qmax, q));
+    return { q, x: sx(q), y, inside };
+  };
+
+  const toQ = (clientX) => {
+    const point = toPlotPoint(clientX, M.t);
+    return Math.max(1, Math.min(Qmax * 0.98, point.q));
+  };
+
+  const updateHover = (e) => {
+    const point = toPlotPoint(e.clientX, e.clientY);
+    if (!point.inside) {
+      setHover(null);
+      return;
+    }
+    const q = point.q;
+    const pumpH = PM.combinedH(q, pump);
+    const systemH = PM.systemHead(q, sys);
+    const eta = PM.combinedEta(q, pump) * 100;
+    const npshr = PM.combinedNPSHr(q, pump);
+    const npsha = Math.max(0, PM.npshAvailable(q, sys));
+    setHover({
+      q,
+      x: point.x,
+      y: Math.max(M.t + 6, Math.min(point.y, M.t + ih - 6)),
+      pumpH,
+      systemH,
+      eta,
+      npshr,
+      npsha,
+      labelX: point.x > M.l + iw - 190 ? point.x - 184 : point.x + 10,
+      labelY: point.y > M.t + ih - 98 ? point.y - 94 : point.y + 10,
+    });
   };
 
   const moveTarget = (e) => latest.current.setOp({ Q: toQ(e.clientX) });
@@ -127,6 +161,7 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
     e.preventDefault();
   };
   const onPointerMove = (e) => {
+    updateHover(e);
     if (activePointer.current !== e.pointerId) return;
     moveTarget(e);
     e.preventDefault();
@@ -139,6 +174,9 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
     activePointer.current = null;
     e.preventDefault();
   };
+  const onPointerLeave = () => {
+    if (activePointer.current == null) setHover(null);
+  };
 
   // Efficiency band shading (80% of BEP .. 110% of BEP) — preferred operating region
   const porLo = bepQ * 0.8;
@@ -147,7 +185,7 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
   return (
     <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{touchAction:"none"}}
          onPointerDown={onPointerDown} onPointerMove={onPointerMove}
-         onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+         onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onPointerLeave={onPointerLeave}>
       {/* Fine grid */}
       <g stroke="var(--rule-very-faint)" strokeWidth="1">
         {Array.from({ length: 21 }, (_, i) => {
@@ -354,6 +392,26 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
           </text>
         </g>
       </g>
+
+      {/* Passive hover readout, independent of the draggable target marker */}
+      {hover && (
+        <g className="hover-readout" data-hover-readout pointerEvents="none">
+          <line x1={hover.x} y1={M.t} x2={hover.x} y2={M.t + ih}
+                stroke="var(--rule)" strokeWidth="0.75" strokeDasharray="2 3" opacity="0.7" />
+          <circle cx={hover.x} cy={syH(hover.pumpH)} r="3" fill="var(--paper)" stroke="var(--ink)" strokeWidth="1" />
+          <circle cx={hover.x} cy={syH(hover.systemH)} r="3" fill="var(--paper)" stroke="var(--ink-2)" strokeWidth="1" />
+          <g transform={`translate(${hover.labelX}, ${hover.labelY})`}>
+            <rect x="0" y="0" width="174" height="84"
+                  fill="var(--paper)" stroke="var(--rule)" strokeWidth="0.75" />
+            <text x="8" y="13" fontFamily="var(--mono)" fontSize="9" fill="var(--mute)">CURVE READOUT</text>
+            <text x="8" y="28" fontFamily="var(--mono)" fontSize="10" fill="var(--ink)">Q {uQ(hover.q,1).padStart(7)} {U.unit("flow")}</text>
+            <text x="8" y="40" fontFamily="var(--mono)" fontSize="10" fill="var(--ink)">Hp {uH(hover.pumpH,1).padStart(6)} {U.unit("head")}</text>
+            <text x="8" y="52" fontFamily="var(--mono)" fontSize="10" fill="var(--ink-2)">Hs {uH(hover.systemH,1).padStart(6)} {U.unit("head")}</text>
+            <text x="8" y="64" fontFamily="var(--mono)" fontSize="10" fill="var(--accent)">eta {hover.eta.toFixed(1).padStart(5)} %</text>
+            <text x="8" y="76" fontFamily="var(--mono)" fontSize="10" fill="var(--cool)">NPSHa/r {U.fmt("head", hover.npsha, 1)} / {U.fmt("head", hover.npshr, 1)}</text>
+          </g>
+        </g>
+      )}
 
       {/* Drafted-in labels for each curve near right edge */}
       <g fontFamily="var(--mono)" fontSize="10">

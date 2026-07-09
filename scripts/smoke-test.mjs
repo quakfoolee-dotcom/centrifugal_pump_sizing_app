@@ -78,7 +78,7 @@ const baseState = {
   op: { Q: 110 },
 };
 
-assert(PumpCases.APP_VERSION === "0.10.22", "app version helper should match this release");
+assert(PumpCases.APP_VERSION === "0.10.23", "app version helper should match this release");
 const editedState = {
   ...baseState,
   meta: { ...baseState.meta, tag: "LIVE-EDIT", docNo: "" },
@@ -128,6 +128,8 @@ assert(!appHtml.includes("meta?.docNo || \"CAL-HYD-0142\""), "status bar should 
 assert(appHtml.includes("protectCurrentWork"), "case loads/imports should guard unsaved active work");
 assert(appHtml.includes("Before ${action}"), "dirty load/import guard should create before-action snapshots");
 assert(appHtml.includes("pumpcalc:baseline"), "dirty-load protection should persist the last clean baseline across refresh");
+assert(appHtml.includes("buildNewCaseState") && appHtml.includes("Started new case"), "app shell should provide a protected new-case flow");
+assert(appHtml.includes("Before ${action}") && appHtml.includes("new case"), "new-case flow should use the snapshot guard");
 const appCss = readFileSync("styles.css", "utf8");
 assert(appCss.includes("@media print"), "print stylesheet should be present");
 assert(appCss.includes(".view[data-screen-label=\"02 Report\"]"), "print stylesheet should force the report view");
@@ -140,6 +142,7 @@ assert(chartJsx.includes("npshTicks") && chartJsx.includes("U.fmt(\"head\", n, 0
 assert(chartJsx.includes("TARGET Q") && chartJsx.includes("SOLVED DUTY"), "chart should distinguish target flow from solved duty");
 assert(chartJsx.includes("onPointerDown") && chartJsx.includes("setPointerCapture"), "chart dragging should use pointer events");
 assert(!chartJsx.includes("onMouseDown={onDown}") && !chartJsx.includes("mousemove"), "chart should not depend on mouse-only drag listeners");
+assert(chartJsx.includes("hover-readout") && chartJsx.includes("CURVE READOUT"), "chart should provide a passive hover curve readout");
 const calculatorJsx = readFileSync("components/Calculator.jsx", "utf8");
 assert(calculatorJsx.includes("parseFieldDisplay") && calculatorJsx.includes("inputMode=\"decimal\""), "numeric fields should keep focused draft text and parse decimal input on commit");
 assert(calculatorJsx.includes("criticalFlags") && calculatorJsx.includes("cautionFlags") && calculatorJsx.includes("assumptionFlags"), "calculator should classify calculation flags by severity");

@@ -110,6 +110,30 @@ function serializeCaseState(value) {
   return JSON.stringify(value || {});
 }
 
+function buildNewCaseState() {
+  return mergeState(initialState, {
+    sys: {
+      Zs: 0,
+      Zd: 0,
+      Ps_kPa: 0,
+      Pd_kPa: 0,
+      Ls: 0,
+      Ld: 0,
+      fitS: [],
+      fitD: [],
+    },
+    meta: {
+      project: "",
+      tag: "",
+      docNo: "",
+      rev: "",
+      preparedBy: "",
+      discipline: "",
+    },
+    op: { Q: initialState.pump.Qb },
+  });
+}
+
 function App() {
   const [state, setState] = useState(initialState);
   const baselineRef = useRef(serializeCaseState(initialState));
@@ -202,6 +226,17 @@ function App() {
     markCleanState(state);
     setCaseName(name);
     setCaseNotice(`Saved "${name}".`);
+  };
+  const newCase = () => {
+    const protectedWork = protectCurrentWork("new case", cases);
+    if (!protectedWork) return;
+    const nextState = buildNewCaseState();
+    writeCases(protectedWork.cases);
+    markCleanState(nextState);
+    setState(nextState);
+    setCaseName("New case");
+    setView("calc");
+    setCaseNotice(`${protectedWork.snapshotName ? `Saved snapshot "${protectedWork.snapshotName}". ` : ""}Started new case.`);
   };
   const loadCase = (name) => {
     if (!cases[name]) return;
@@ -309,6 +344,7 @@ function App() {
             </select>
             <input className="case-name" placeholder="name" value={caseName}
                    onChange={e => setCaseName(e.target.value)} />
+            <button className="btn" onClick={newCase} title="start a blank calculation case">New</button>
             <button className="btn" onClick={saveCase}>Save</button>
             <button className="btn" onClick={exportCase} title="export current case as JSON">Export</button>
             <button className="btn" onClick={exportCaseLibrary} disabled={!Object.keys(cases).length} title="export saved case library as JSON">All</button>
