@@ -16,7 +16,7 @@ Static, engineer-grade centrifugal pump sizing calculator built as a single-page
 - Solves **VFD** speed-for-duty, minimum speed to hold static head, and a speed-family overlay.
 - Reports **energy & lifecycle** — annual energy, cost, and specific energy.
 - Includes a **pipe schedule picker** (DN + Sch 40/80/160 → real ID, ASME B36.10) and an **acceptance tolerance band** (ISO 9906 1B/2B/3B or ANSI-HI 14.6).
-- Offers a full **SI ⇄ US unit toggle**, editable **report metadata**, protected **New case** reset, a **saved-case library** with JSON export/import, **side-by-side comparison** with a delta table and curve overlay, and a printable **report sheet**.
+- Offers a full **SI ⇄ US unit toggle**, editable **report metadata**, protected **New case** reset, a **case manager** with rename/duplicate/delete/export/import, **shareable case links**, **side-by-side comparison** with a delta table and curve overlay, and a printable **report sheet**.
 
 ## Run Locally
 

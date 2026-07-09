@@ -13,7 +13,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const APP_VERSION = "0.10.24";
+const APP_VERSION = "0.10.25";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
@@ -474,6 +474,14 @@ async function main() {
     const exported = await waitForDownloadedJson(downloadDir);
     assert(exported.payload.schema === "pumpcalc.case.v1", "downloaded export should use the case schema");
     assert(exported.payload.state?.meta?.tag === "P-BROWSER-EDIT", "downloaded export should contain current live metadata");
+    assert(await evaluate(cdp, sessionId, clickTextScript("Share")), "Share button should be clickable");
+    assert(await waitForEval(cdp, sessionId, `(() => {
+      if (!location.hash.startsWith('#case=')) return false;
+      const payload = JSON.parse(decodeURIComponent(location.hash.slice('#case='.length)));
+      return payload.schema === 'pumpcalc.case.v1'
+        && payload.name === 'Browser Smoke Case'
+        && payload.state?.meta?.tag === 'P-BROWSER-EDIT';
+    })()`, "shareable case hash"), "share link should encode the current live case in the URL hash");
 
     assert(await evaluate(cdp, sessionId, selectValueScript(".case-sel", "Browser Smoke Case")), "saved case should be selectable for load");
     assert(await waitForEval(cdp, sessionId, `(() => {
@@ -549,6 +557,37 @@ async function main() {
       return cases.state?.meta?.tag === 'P-STATE' && cases.Other?.meta?.tag === 'P-OTHER';
     })()`, "state-named library import"), "library with a case named state should keep sibling cases");
 
+    assert(await evaluate(cdp, sessionId, clickTextScript("Manage")), "case manager button should be clickable");
+    assert(await waitForEval(cdp, sessionId, `Boolean(document.querySelector('.case-manager-panel'))`, "case manager panel"), "case manager panel should open");
+    assert(await evaluate(cdp, sessionId, `(() => {
+      const row = [...document.querySelectorAll('.case-manager-row')]
+        .find(node => node.textContent.includes('Browser Library A'));
+      if (!row) return false;
+      row.click();
+      return true;
+    })()`), "Browser Library A should be selectable in the case manager");
+    assert(await evaluate(cdp, sessionId, setInputScript(".case-manager-name-input", "Browser Library A Renamed")), "case-manager rename input should be editable");
+    assert(await evaluate(cdp, sessionId, clickTextScript("Rename")), "case-manager Rename should be clickable");
+    assert(await waitForEval(cdp, sessionId, `(() => {
+      const cases = JSON.parse(localStorage.getItem('pumpcalc:cases') || '{}');
+      return cases['Browser Library A Renamed']?.meta?.tag === 'P-LIBRARY'
+        && !cases['Browser Library A']
+        && document.querySelector('.case-manager-row.active')?.textContent.includes('Browser Library A Renamed');
+    })()`, "case-manager rename"), "case manager should rename selected cases without losing data");
+    assert(await evaluate(cdp, sessionId, clickTextScript("Duplicate")), "case-manager Duplicate should be clickable");
+    assert(await waitForEval(cdp, sessionId, `(() => {
+      const cases = JSON.parse(localStorage.getItem('pumpcalc:cases') || '{}');
+      return cases['Browser Library A Renamed copy']?.meta?.tag === 'P-LIBRARY'
+        && document.querySelector('.case-manager-row.active')?.textContent.includes('Browser Library A Renamed copy');
+    })()`, "case-manager duplicate"), "case manager should duplicate the selected case and select the copy");
+    assert(await evaluate(cdp, sessionId, clickTextScript("Delete")), "case-manager Delete should be clickable");
+    assert(await waitForEval(cdp, sessionId, `(() => {
+      const cases = JSON.parse(localStorage.getItem('pumpcalc:cases') || '{}');
+      return cases['Browser Library A Renamed']?.meta?.tag === 'P-LIBRARY'
+        && !cases['Browser Library A Renamed copy'];
+    })()`, "case-manager delete"), "case manager should delete the selected duplicate after confirmation");
+    assert(await evaluate(cdp, sessionId, clickTextScript("Close")), "case manager Close should be clickable");
+
     assert(await evaluate(cdp, sessionId, clickTextScript("US")), "US unit toggle should be clickable");
     assert(await waitForEval(cdp, sessionId, `document.querySelector('.brand-sub')?.textContent.includes('US')`, "US unit label"), "unit toggle should update the app shell");
 
@@ -568,7 +607,7 @@ async function main() {
     assert(await waitForEval(cdp, sessionId, `window.__printCalls.at(-1) === '02 Report'`, "report print routing"), "print should route through Report view");
 
     assert(cdp.exceptions.length === 0, `browser runtime exceptions:\n${cdp.exceptions.join("\n")}`);
-    console.log("browser-smoke-test: flags, panel layout, chart hover, new case, metadata, case import/export, numeric inputs, units, and report print passed");
+    console.log("browser-smoke-test: flags, panel layout, chart hover, new case, case manager, share link, metadata, case import/export, numeric inputs, units, and report print passed");
   } finally {
     try { await cdp?.send("Browser.close"); } catch {}
     if (browserRef?.browser && !browserRef.browser.killed) browserRef.browser.kill();

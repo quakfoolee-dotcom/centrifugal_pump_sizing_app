@@ -52,7 +52,7 @@ so it does not depend on CDN access during the test.
 
 ```text
 smoke-test: duty solve, parallel case, and pipe helpers passed
-browser-smoke-test: flags, panel layout, chart hover, new case, metadata, case import/export, numeric inputs, units, and report print passed
+browser-smoke-test: flags, panel layout, chart hover, new case, case manager, share link, metadata, case import/export, numeric inputs, units, and report print passed
 verify-formulas: all 82 first-principles checks passed
 ```
 
@@ -76,7 +76,7 @@ calculation or workflow assertion that failed.
 | NPSH acceptance | Configurable absolute NPSH margin effect and default margin value. |
 | Motor sizing | Next IEC/NEMA motor selection, zero-duty motor behavior, and size-based motor efficiency trend. |
 | Fluid property flags | Estimated non-water preset flag and mineral-acid handling for sulfuric acid-style fluids. |
-| Case workflow | Current-state case export, valid single-case import, case-library import without active-state replacement, invalid library rejection, and dirty-load snapshot protection. |
+| Case workflow | Current-state case export, share-link hash round trip, valid single-case import, case-library import without active-state replacement, invalid library rejection, case-manager rename/duplicate/delete, and dirty-load snapshot protection. |
 | Chart UX wiring | Explicit NPSH tick scale, target-flow label, solved-duty label, and pointer-event drag wiring. |
 | Chart hover readout | Passive chart hover readout is wired for Q, pump/system head, efficiency, and NPSH values. |
 | Warning UX wiring | Calculator flags are grouped by critical, caution, and collapsed model-assumption tiers. |
@@ -89,6 +89,8 @@ calculation or workflow assertion that failed.
 | Browser navigation | Calculator, Report preview, and Compare tabs activate through click interactions. |
 | Browser metadata workflow | Report metadata fields are edited through real inputs and verified in the report titleblock. |
 | Browser case workflow | Save to localStorage, current-case JSON download, dirty saved-case load with automatic snapshot, protected New case reset, invalid JSON import alert, valid single-case import, valid library import, and a library containing a case named `state`. |
+| Browser case manager workflow | Case manager opens from the topbar and renames, duplicates, and deletes a selected saved case through real DOM interactions. |
+| Browser share-link workflow | `Share` writes a `#case=` hash containing the current live case payload. |
 | Browser chart workflow | Passive hover readout appears when a pointer-move event is dispatched over the chart. |
 | Browser numeric workflow | Partial decimal draft preservation and comma-decimal parsing for a real calculator input. |
 | Browser unit workflow | SI to US toggle updates the visible app shell. |

@@ -78,7 +78,7 @@ const baseState = {
   op: { Q: 110 },
 };
 
-assert(PumpCases.APP_VERSION === "0.10.24", "app version helper should match this release");
+assert(PumpCases.APP_VERSION === "0.10.25", "app version helper should match this release");
 const editedState = {
   ...baseState,
   meta: { ...baseState.meta, tag: "LIVE-EDIT", docNo: "" },
@@ -88,6 +88,17 @@ const caseExport = PumpCases.buildCaseExport(editedState, "Saved Name", "2026-07
 assert(caseExport.filename === "Saved_Name.pumpcase.json", "current case export should use case name for filename");
 assert(caseExport.payload.state.meta.tag === "LIVE-EDIT", "current case export should serialize live state");
 assert(caseExport.payload.state.op.Q === 123, "current case export should not use stale saved state");
+const caseHash = PumpCases.buildCaseLinkHash(editedState, "Shared Pump", "2026-07-08T00:00:00.000Z");
+assert(caseHash.startsWith("#case="), "shareable case hash should use the case prefix");
+const linkedCase = PumpCases.parseCaseLinkHash(caseHash, baseState);
+assert(linkedCase.name === "Shared Pump", "shareable case hash should preserve the case name");
+assert(linkedCase.state.meta.tag === "LIVE-EDIT" && linkedCase.state.op.Q === 123, "shareable case hash should round-trip state");
+assert(PumpCases.parseCaseLinkHash("#view=calc", baseState) === null, "non-case hashes should be ignored");
+assertThrows(
+  () => PumpCases.parseCaseLinkHash("#case=%7B%7D", baseState),
+  /pump and sys objects/,
+  "invalid shared case hash should be rejected"
+);
 const singleImport = PumpCases.parseCaseImport(
   { schema: PumpCases.CASE_SCHEMA, name: "Imported One", state: editedState },
   "case.json",
@@ -130,6 +141,8 @@ assert(appHtml.includes("Before ${action}"), "dirty load/import guard should cre
 assert(appHtml.includes("pumpcalc:baseline"), "dirty-load protection should persist the last clean baseline across refresh");
 assert(appHtml.includes("buildNewCaseState") && appHtml.includes("Started new case"), "app shell should provide a protected new-case flow");
 assert(appHtml.includes("Before ${action}") && appHtml.includes("new case"), "new-case flow should use the snapshot guard");
+assert(appHtml.includes("case-manager-panel") && appHtml.includes("renameSelectedCase") && appHtml.includes("duplicateSelectedCase"), "app shell should provide case-manager rename and duplicate workflows");
+assert(appHtml.includes("copyShareLink") && appHtml.includes("parseCaseLinkHash") && appHtml.includes("buildCaseLinkHash"), "app shell should provide shareable case links");
 const appCss = readFileSync("styles.css", "utf8");
 assert(appCss.includes("@media print"), "print stylesheet should be present");
 assert(appCss.includes(".view[data-screen-label=\"02 Report\"]"), "print stylesheet should force the report view");
@@ -138,6 +151,7 @@ assert(appCss.includes("grid-template-columns: 340px minmax(0, 1fr) 300px"), "de
 assert(appCss.includes("grid-template-columns: 300px minmax(0, 1fr) 260px"), "compact layout should keep a wider input panel");
 assert(appCss.includes("overflow-x: hidden") && appCss.includes(".field > * { min-width: 0; }"), "panel form rows should shrink without horizontal scrollbars");
 assert(/\.btn\s*\{\s*all: unset;\s*box-sizing: border-box;/m.test(appCss), "unset full-width buttons should preserve border-box sizing");
+assert(appCss.includes(".case-manager-backdrop") && appCss.includes(".case-manager-row.active"), "case-manager layout should be styled");
 const standaloneHtml = readFileSync("Pump_Calculator_standalone.html", "utf8");
 const standaloneHeaderCount = (standaloneHtml.match(/Centrifugal Pump Calculator/g) || []).length;
 assert(standaloneHeaderCount <= 1, "standalone build should not accumulate duplicate app CSS header comments");

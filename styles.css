@@ -145,6 +145,135 @@ body {
   font-size: 10px;
 }
 
+.case-manager-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 72px 20px 24px;
+  background: oklch(0.15 0.01 80 / 0.34);
+}
+
+.case-manager-panel {
+  width: min(860px, 100%);
+  max-height: calc(100vh - 96px);
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: 0 18px 50px oklch(0.15 0.01 80 / 0.25);
+}
+
+.case-manager-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border-bottom: var(--border);
+}
+
+.case-manager-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.case-manager-sub {
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--mute);
+}
+
+.case-manager-body {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+}
+
+.case-manager-list {
+  min-height: 260px;
+  max-height: min(520px, calc(100vh - 190px));
+  overflow: auto;
+  border-right: var(--border);
+}
+
+.case-manager-row {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(140px, 1.7fr) minmax(80px, 0.8fr) minmax(90px, 1fr) 58px;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-bottom: var(--hair-faint);
+  color: var(--ink-2);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.case-manager-row:hover,
+.case-manager-row.active {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+.case-manager-name {
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.case-manager-row span:not(.case-manager-name) {
+  color: var(--mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.case-manager-empty {
+  padding: 18px;
+  color: var(--mute);
+  font-size: 12px;
+}
+
+.case-manager-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.case-manager-name-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 24px;
+  padding: 0 7px;
+  border: 1px solid var(--rule-faint);
+  background: var(--paper-2);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.case-manager-name-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #fff;
+}
+
+.case-manager-rule {
+  border-top: var(--hair);
+  margin: 2px 0;
+}
+
 /* SI/US unit toggle in top bar */
 .unit-seg { width: 68px; height: 24px; }
 .unit-seg button { padding: 0; font-size: 11px; font-family: var(--mono); }
@@ -671,6 +800,28 @@ table.cmp tbody tr:hover { background: var(--paper-2); }
   .cases,
   .topbar-right {
     flex-wrap: wrap;
+  }
+
+  .case-manager-backdrop {
+    padding: 56px 10px 16px;
+  }
+
+  .case-manager-body {
+    grid-template-columns: 1fr;
+  }
+
+  .case-manager-list {
+    border-right: 0;
+    border-bottom: var(--border);
+  }
+
+  .case-manager-row {
+    grid-template-columns: minmax(0, 1fr) 72px;
+  }
+
+  .case-manager-row span:nth-child(3),
+  .case-manager-row span:nth-child(4) {
+    display: none;
   }
 
   .center {

@@ -89,8 +89,10 @@ const {
   APP_VERSION,
   buildCaseExport,
   buildCaseLibraryExport,
+  buildCaseLinkHash,
   mergeState,
   parseCaseImport,
+  parseCaseLinkHash,
   uniqueCaseName,
 } = window.PumpCases;
 
@@ -143,11 +145,25 @@ function App() {
   const [tweaksOn, setTweaksOn] = useState(false);
   const importRef = useRef(null);
   const [caseNotice, setCaseNotice] = useState("");
+  const [caseManagerOpen, setCaseManagerOpen] = useState(false);
+  const [managerSelection, setManagerSelection] = useState("");
+  const [managerDraftName, setManagerDraftName] = useState("");
 
   useEffect(() => { document.documentElement.dataset.density = density; document.body.dataset.density = density; }, [density]);
 
   useEffect(() => {
     try {
+      const linked = parseCaseLinkHash(window.location.hash, initialState);
+      if (linked) {
+        const snapshot = serializeCaseState(linked.state);
+        baselineRef.current = snapshot;
+        localStorage.setItem("pumpcalc:baseline", snapshot);
+        localStorage.setItem("pumpcalc:v4", JSON.stringify(linked.state));
+        setState(linked.state);
+        setCaseName(linked.name);
+        setCaseNotice(`Opened shared link "${linked.name}". Save it to keep it in your library.`);
+        return;
+      }
       const saved = JSON.parse(localStorage.getItem("pumpcalc:v4") || "null");
       if (saved) {
         const merged = mergeState(initialState, saved);
@@ -201,6 +217,16 @@ function App() {
     try { setCases(JSON.parse(localStorage.getItem("pumpcalc:cases") || "{}")); } catch {}
   }, []);
   const writeCases = (next) => { setCases(next); localStorage.setItem("pumpcalc:cases", JSON.stringify(next)); };
+  const selectManagerCase = (name) => {
+    setManagerSelection(name);
+    setManagerDraftName(name);
+  };
+  const openCaseManager = () => {
+    const names = Object.keys(cases);
+    const preferred = cases[caseName] ? caseName : (names[0] || "");
+    selectManagerCase(preferred);
+    setCaseManagerOpen(true);
+  };
   const currentWorkIsDirty = () => serializeCaseState(state) !== baselineRef.current;
   const protectCurrentWork = (action, existingCases) => {
     const existing = existingCases || {};
@@ -239,15 +265,16 @@ function App() {
     setCaseNotice(`${protectedWork.snapshotName ? `Saved snapshot "${protectedWork.snapshotName}". ` : ""}Started new case.`);
   };
   const loadCase = (name) => {
-    if (!cases[name]) return;
+    if (!cases[name]) return false;
     const protectedWork = protectCurrentWork("load", cases);
-    if (!protectedWork) return;
+    if (!protectedWork) return false;
     writeCases(protectedWork.cases);
     const nextState = mergeState(initialState, protectedWork.cases[name]);
     markCleanState(nextState);
     setState(nextState);
     setCaseName(name);
     setCaseNotice(`${protectedWork.snapshotName ? `Saved snapshot "${protectedWork.snapshotName}". ` : ""}Loaded "${name}".`);
+    return true;
   };
   const delCase = (name) => {
     const n = { ...cases };
@@ -257,7 +284,51 @@ function App() {
       setCaseName("");
       markNoSavedBaseline();
     }
+    if (managerSelection === name) {
+      const nextName = Object.keys(n)[0] || "";
+      selectManagerCase(nextName);
+    }
     setCaseNotice(`Deleted "${name}".`);
+  };
+  const renameSelectedCase = () => {
+    const from = managerSelection;
+    const to = managerDraftName.trim();
+    if (!from || !cases[from] || !to) return;
+    if (to !== from && cases[to]) {
+      alert(`A case named "${to}" already exists.`);
+      return;
+    }
+    if (to === from) {
+      setCaseNotice(`"${from}" is already named "${to}".`);
+      return;
+    }
+    const next = {};
+    Object.entries(cases).forEach(([name, saved]) => {
+      next[name === from ? to : name] = saved;
+    });
+    writeCases(next);
+    if (caseName === from) setCaseName(to);
+    selectManagerCase(to);
+    setCaseNotice(`Renamed "${from}" to "${to}".`);
+  };
+  const duplicateSelectedCase = () => {
+    const from = managerSelection;
+    if (!from || !cases[from]) return;
+    const copyName = uniqueCaseName(`${from} copy`, cases);
+    const next = { ...cases, [copyName]: JSON.parse(serializeCaseState(cases[from])) };
+    writeCases(next);
+    selectManagerCase(copyName);
+    setCaseNotice(`Duplicated "${from}" as "${copyName}".`);
+  };
+  const loadSelectedCase = () => {
+    if (!managerSelection || !cases[managerSelection]) return;
+    if (loadCase(managerSelection)) setCaseManagerOpen(false);
+  };
+  const exportSelectedCase = () => {
+    if (!managerSelection || !cases[managerSelection]) return;
+    const { filename, payload } = buildCaseExport(cases[managerSelection], managerSelection);
+    downloadJson(filename, payload);
+    setCaseNotice(`Exported "${managerSelection}".`);
   };
   const exportCase = () => {
     const name = (caseName || state.meta?.tag || state.meta?.docNo || "Current case").trim();
@@ -302,10 +373,27 @@ function App() {
     };
     reader.readAsText(file);
   };
+  const copyShareLink = async () => {
+    const name = (caseName || state.meta?.tag || state.meta?.docNo || "Current case").trim();
+    const hash = buildCaseLinkHash(state, name);
+    const url = `${window.location.href.split("#")[0]}${hash}`;
+    window.history.replaceState(null, "", url);
+    let copied = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+        copied = true;
+      }
+    } catch {}
+    setCaseNotice(copied ? "Copied share link." : "Share link is ready in the address bar.");
+  };
   const printReport = () => {
     setView("report");
     window.setTimeout(() => window.print(), 0);
   };
+
+  const caseNames = Object.keys(cases);
+  const selectedManagedCase = managerSelection ? cases[managerSelection] : null;
 
   return (
     <div>
@@ -340,23 +428,74 @@ function App() {
             <select className="case-sel" value={cases[caseName] ? caseName : ""}
                     onChange={e => e.target.value && loadCase(e.target.value)}>
               <option value="">Load…</option>
-              {Object.keys(cases).map(n => <option key={n} value={n}>{n}</option>)}
+              {caseNames.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
             <input className="case-name" placeholder="name" value={caseName}
                    onChange={e => setCaseName(e.target.value)} />
             <button className="btn" onClick={newCase} title="start a blank calculation case">New</button>
             <button className="btn" onClick={saveCase}>Save</button>
             <button className="btn" onClick={exportCase} title="export current case as JSON">Export</button>
-            <button className="btn" onClick={exportCaseLibrary} disabled={!Object.keys(cases).length} title="export saved case library as JSON">All</button>
-            <button className="btn" onClick={() => importRef.current && importRef.current.click()} title="import case JSON">Import</button>
+            <button className="btn" onClick={openCaseManager} title="manage saved cases">Manage</button>
+            <button className="btn" onClick={copyShareLink} title="copy a link to this exact case">Share</button>
             <input ref={importRef} type="file" accept="application/json,.json" onChange={importCaseFile} style={{display:"none"}} />
-            {cases[caseName] && <button className="btn" onClick={() => delCase(caseName)} title="delete case">✕</button>}
             {caseNotice && <span className="case-notice" title={caseNotice}>{caseNotice}</span>}
           </div>
           <span><span className="dot" />autosave</span>
           <button className="btn" onClick={printReport} title="switch to report preview and print the report sheet">Print Report / PDF</button>
         </div>
       </div>
+
+      {caseManagerOpen && (
+        <div className="case-manager-backdrop" role="presentation" onClick={(e) => e.target === e.currentTarget && setCaseManagerOpen(false)}>
+          <section className="case-manager-panel" role="dialog" aria-modal="true" aria-label="Case manager">
+            <div className="case-manager-head">
+              <div>
+                <div className="case-manager-title">Case manager</div>
+                <div className="case-manager-sub mono">{caseNames.length} saved case{caseNames.length === 1 ? "" : "s"}</div>
+              </div>
+              <button className="btn" onClick={() => setCaseManagerOpen(false)} aria-label="Close case manager">Close</button>
+            </div>
+            <div className="case-manager-body">
+              <div className="case-manager-list" aria-label="Saved cases">
+                {caseNames.length ? caseNames.map(name => {
+                  const saved = cases[name] || {};
+                  const active = name === managerSelection;
+                  return (
+                    <button key={name}
+                            className={"case-manager-row" + (active ? " active" : "")}
+                            onClick={() => selectManagerCase(name)}>
+                      <span className="case-manager-name">{name}</span>
+                      <span>{saved.meta?.tag || "no tag"}</span>
+                      <span>{saved.meta?.docNo || "no doc"}</span>
+                      <span>{saved.meta?.rev ? `Rev ${saved.meta.rev}` : "no rev"}</span>
+                    </button>
+                  );
+                }) : (
+                  <div className="case-manager-empty">
+                    No saved cases yet. Save the current calculation, then manage it here.
+                  </div>
+                )}
+              </div>
+              <div className="case-manager-actions">
+                <label className="label" htmlFor="case-manager-name">Selected case name</label>
+                <input id="case-manager-name"
+                       className="case-manager-name-input"
+                       value={managerDraftName}
+                       disabled={!selectedManagedCase}
+                       onChange={e => setManagerDraftName(e.target.value)} />
+                <button className="btn" onClick={loadSelectedCase} disabled={!selectedManagedCase}>Load selected</button>
+                <button className="btn" onClick={renameSelectedCase} disabled={!selectedManagedCase || !managerDraftName.trim()}>Rename</button>
+                <button className="btn" onClick={duplicateSelectedCase} disabled={!selectedManagedCase}>Duplicate</button>
+                <button className="btn" onClick={exportSelectedCase} disabled={!selectedManagedCase}>Export selected</button>
+                <button className="btn" onClick={() => selectedManagedCase && window.confirm(`Delete "${managerSelection}"?`) && delCase(managerSelection)} disabled={!selectedManagedCase}>Delete</button>
+                <div className="case-manager-rule" />
+                <button className="btn" onClick={exportCaseLibrary} disabled={!caseNames.length}>Export all</button>
+                <button className="btn" onClick={() => importRef.current && importRef.current.click()}>Import JSON</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
 
       <div className={"view" + (view === "calc" ? " active" : "")} data-screen-label="01 Calculator">
         <window.Calculator state={state} setState={setState} />

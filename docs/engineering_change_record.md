@@ -25,6 +25,73 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.10.25 - Case Manager And Shareable Links
+
+**Objective**
+
+Implement UX priority ranks 9 and 10: improve saved-case library management and
+make individual calculation scenarios shareable from a static GitHub Pages app.
+
+**Before Fix**
+
+- Saved cases could be loaded, saved, deleted, exported, and imported only
+  through a cramped topbar control group.
+- Renaming a case required saving under a new name and then deleting the old
+  entry manually.
+- There was no duplicate workflow for branching a scenario.
+- Exporting one saved case from the library required loading it first or using
+  the current-case export.
+- Engineers could not paste a link that opened the exact scenario being
+  reviewed.
+
+**After Fix**
+
+- Added a dedicated case manager dialog with saved-case rows showing name, tag,
+  document number, and revision.
+- Added selected-case actions for load, rename, duplicate, delete, and
+  export-selected.
+- Moved full-library export and JSON import into the manager while keeping
+  current-case export in the topbar.
+- Added a `Share` action that writes the current scenario to a `#case=` URL hash
+  and copies the full link when clipboard access is available.
+- Added startup handling for `#case=` links, using the same case-shape
+  validation and `mergeState()` path used by imported cases.
+- Bumped the shared app version to `0.10.25` and regenerated the standalone
+  artifact.
+
+**Files Changed**
+
+- `CHANGELOG.md`
+- `Pump_Calculator.html`
+- `Pump_Calculator_standalone.html`
+- `docs/engineering_change_record.md`
+- `docs/smoke_test_matrix.md`
+- `lib/caseLibrary.js`
+- `scripts/browser-smoke-test.mjs`
+- `scripts/smoke-test.mjs`
+- `styles.css`
+
+**QC Results**
+
+- `npm run test` passed.
+- `npm run verify:formulas` passed.
+- `npm run build:standalone` passed.
+- `npm run test:browser` passed.
+- `git diff --check` passed.
+
+**Remaining Risk**
+
+- Share links can become long because the app avoids adding a compression
+  dependency. Very large catalog-heavy cases may exceed limits in some email,
+  chat, or document systems.
+- The browser smoke test verifies the hash payload and manager DOM workflows,
+  but it does not validate every clipboard permission mode.
+
+**Release / Commit**
+
+- Release: `0.10.25`
+- Commit: pending.
+
 ### 0.10.24 - Calculator Panel Width And Horizontal Scroll Fix
 
 **Objective**

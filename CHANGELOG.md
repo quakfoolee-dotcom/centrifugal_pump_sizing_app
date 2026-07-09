@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.25] - 2026-07-09
+
+- Added a dedicated case manager dialog with saved-case list, rename, duplicate, delete, selected-case export, full-library export, and JSON import actions.
+- Reduced the topbar case controls by moving library-level actions out of the crowded toolbar.
+- Added shareable case links using `#case=` URL hashes that encode the current case and open through the same merge/validation path as imported cases.
+- Added source and browser smoke coverage for case-manager workflows and share-link payloads; bumped the shared app version to `0.10.25`.
+- Regenerated the standalone app.
+
 ## [0.10.24] - 2026-07-08
 
 - Increased the desktop and compact calculator input-panel widths to prevent the suction/discharge rows from producing horizontal scrollbars.
