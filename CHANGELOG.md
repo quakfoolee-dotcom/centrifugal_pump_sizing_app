@@ -7,6 +7,7 @@
 - Moved case notifications into a dismissible five-second toast so loading or snapshot messages cannot resize toolbar controls.
 - Added case-name truncation/tooltips, responsive toolbar rules, theme-safe focus colors, and a print/report Paper palette independent of the selected interface theme.
 - Added source and rendered-browser regression coverage, bumped the app version to `0.11.1`, and regenerated the standalone app.
+- Added release metadata, proprietary-use notice, versioned release notes, reproducible checksum packaging, CI verification, and GitHub Pages deployment automation.
 
 ## [0.11.0] - 2026-07-10
 

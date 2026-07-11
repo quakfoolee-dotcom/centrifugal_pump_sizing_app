@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run source smoke tests
+        run: npm test
+
+      - name: Verify engineering formulas
+        run: npm run verify:formulas
+
+      - name: Rebuild standalone artifact
+        run: npm run build:standalone
+
+      - name: Verify committed standalone is current
+        run: git diff --exit-code -- Pump_Calculator_standalone.html
+
+      - name: Run rendered browser workflow
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: npm run test:browser
+
+      - name: Build release package
+        run: npm run package:release

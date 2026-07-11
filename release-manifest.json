@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "product": "Centrifugal Pump Sizing App",
+  "version": "0.11.1",
+  "releaseDate": "2026-07-11",
+  "releaseChannel": "stable",
+  "entrypoints": {
+    "hosted": "Pump_Calculator.html",
+    "offline": "Pump_Calculator_standalone.html"
+  },
+  "packageArtifact": "Centrifugal_Pump_Sizing_App_v0.11.1.html",
+  "releaseNotes": "docs/releases/v0.11.1.md",
+  "license": "UNLICENSED",
+  "supportClassification": "engineering-screening",
+  "minimumBrowser": "Modern browser with ES2020, SVG, localStorage, and print support"
+}

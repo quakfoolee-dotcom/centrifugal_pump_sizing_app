@@ -2,6 +2,11 @@
 
 Static, engineer-grade centrifugal pump sizing calculator built as a single-page browser app. Open `index.html` or `Pump_Calculator.html` for the multi-file app, or `Pump_Calculator_standalone.html` for the single self-contained offline file.
 
+Current stable release: **v0.11.1**. Release packages and checksums are published
+through [GitHub Releases](https://github.com/quakfoolee-dotcom/centrifugal_pump_sizing_app/releases),
+and the hosted application is deployed through
+[GitHub Pages](https://quakfoolee-dotcom.github.io/centrifugal_pump_sizing_app/).
+
 ## What It Does
 
 - Computes the **system curve** and finds the **duty point** where the pump and system curves intersect — live, as you edit.
@@ -37,6 +42,8 @@ npm run test
 npm run build:standalone
 npm run test:browser
 npm run verify:formulas
+npm run package:release
+npm run build:site
 ```
 
 `verify:formulas` checks the calculation engine against first-principles
@@ -66,6 +73,10 @@ scripts/smoke-test.mjs             No-dependency calculation smoke test
 scripts/verify-formulas.mjs        First-principles formula verification
 scripts/browser-smoke-test.mjs     Headless Chrome/Edge workflow smoke test
 scripts/build-standalone.mjs       Regenerates the offline standalone file
+scripts/package-release.mjs        Builds versioned release files and SHA-256 sums
+scripts/build-site.mjs             Stages the minimal GitHub Pages artifact
+release-manifest.json              Release version, entrypoint, and support metadata
+docs/releases/v0.11.1.md           Versioned release notes
 docs/verify_formulas_reference.md  LaTeX-style verifier formula reference
 docs/engineering_upgrade_v0.11.0.md Before/after engineering upgrade record
 docs/major_upgrades_delivered_v0.11.0.md Detailed upgrade changes and results
@@ -96,3 +107,10 @@ All physics is computed in **SI internally** (m³/h, m, kW, kPa, mm, °C). The U
 ## Disclaimer
 
 This is an engineering screening tool. Approximations — notably viscosity above ~300 cP — and any final guarantee point should be confirmed against vendor pump curves and the governing project standards before procurement.
+
+## License
+
+Copyright (c) 2026 quakfoolee-dotcom. All rights reserved. This repository is
+published for controlled distribution and review; no permission to copy,
+modify, or redistribute is granted without written authorization. See
+`LICENSE` and `NOTICE.md`.
