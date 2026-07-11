@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.0] - 2026-07-10
+
+- Corrected single-duty/standby power and energy by separating installed pumps from simultaneously operating pumps; added parallel all-running/one-unavailable staging, per-branch equipment flow, and conservative branch-imbalance loading.
+- Separated required design duty from the predicted pump/system intersection and based rated margins on the fixed requirement.
+- Converted catalog flow/head/NPSHr fields through the active SI/US unit layer and changed efficiency entry to validated percent.
+- Added blocking engineering validation, independent NPSH ratio/absolute-margin flags, liquid-range warnings, and suction boiling checks.
+- Added configurable POR/AOR, MCSF, thermal minimum flow, suction-specific-speed limit, and motor sizing margin.
+- Added maximum absorbed-power motor-envelope sizing across the AOR at maximum scenario density.
+- Added minimum/normal/maximum liquid-level scenarios and worst-case rated NPSH using minimum atmosphere, maximum vapor pressure, and dirty equipment.
+- Added separate suction/discharge roughness plus fixed ΔP, clean/dirty filter, and control-valve Kv/Cv equipment losses.
+- Expanded the printable report with required/predicted duty, scenario envelope, equipment losses, worst-case NPSH, and motor-envelope results.
+- Increased first-principles verification from 82 to 85 checks, expanded regression coverage, regenerated the standalone app, and documented the before/after results in `docs/engineering_upgrade_v0.11.0.md`.
+
 ## [0.10.26] - 2026-07-09
 
 - Converted the main view tabs from clickable `div` elements to accessible button tabs with ARIA tablist semantics and arrow-key navigation.

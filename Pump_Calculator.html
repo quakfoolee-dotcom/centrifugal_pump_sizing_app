@@ -32,13 +32,15 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 }/*EDITMODE-END*/;
 
 const initialState = {
-  fluid: { key: "Water", tempC: 20 },
+  fluid: { key: "Water", tempC: 20, validMinC: 0, validMaxC: 99, freezeC: 0 },
   sys: {
     rho: 998, mu: 1.0, Pvap_kPa: 2.34, Patm_kPa: 101.3,
     Zs: 1.5, Zd: 19.5, Ps_kPa: 0, Pd_kPa: 0,
     Ds: 154.1, Ls: 8,
     Dd: 128.2, Ld: 85,
-    eps: 0.046,
+    eps: 0.046, epsS: 0.046, epsD: 0.046,
+    equipmentCondition: "clean",
+    equipment: [],
     fitS: [
       { type: "entrance_sharp", qty: 1 },
       { type: "elbow90_lr", qty: 2 },
@@ -67,11 +69,23 @@ const initialState = {
     npshRatio: 1.3,
     npshMarginAbs: 0.6,
     minFlowPct: 45,
+    thermalMinFlow: 0,
+    porMinPct: 70, porMaxPct: 120,
+    aorMinPct: 50, aorMaxPct: 130,
+    nssLimit: 213,
+    motorMarginPct: 15,
     arrangement: "single",
+    installedPumps: 2,
     nPumps: 2,
+    parallelImbalancePct: 0,
     showSpeedFamily: false,
   },
-  design: { flowMargin: 10, headMargin: 0 },
+  design: { requiredQ: 110, headMode: "system", requiredH: 0, flowMargin: 10, headMargin: 0 },
+  scenario: {
+    ZsMin: 0.5, ZsNormal: 1.5, ZsMax: 2.5,
+    ZdMin: 18.5, ZdNormal: 19.5, ZdMax: 20.5,
+    PatmMin_kPa: 95, maxTempC: 40, PvapMax_kPa: 7.38, rhoMax: 1000,
+  },
   econ: { hours: 8000, price: 0.12 },
   meta: {
     project: "Raw-Water Transfer Skid - Unit 200",

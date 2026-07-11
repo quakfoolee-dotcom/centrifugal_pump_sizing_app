@@ -131,6 +131,56 @@ const FittingsTable = ({ list, onChange }) => {
   );
 };
 
+const EquipmentTable = ({ list, onChange }) => {
+  const rows = Array.isArray(list) ? list : [];
+  const setRow = (i, patch) => onChange(rows.map((r, j) => j === i ? { ...r, ...patch } : r));
+  const addRow = () => onChange([...rows, {
+    name: "Equipment", type: "fixed_dp", side: "discharge", qRef: 100,
+    dpClean_kPa: 10, dpDirty_kPa: 20, enabled: true,
+  }]);
+  const num = (value, fallback = 0) => Number.isFinite(+value) ? +value : fallback;
+  return (
+    <div style={{padding:"4px var(--pad) 8px"}}>
+      {rows.map((r, i) => (
+        <div key={i} style={{border:"1px solid var(--rule-faint)", padding:5, marginBottom:5}}>
+          <div style={{display:"grid", gridTemplateColumns:"1fr 92px 70px 86px 20px", gap:4, marginBottom:4}}>
+            <input className="cat-in" value={r.name || ""} placeholder="Equipment name" onChange={e => setRow(i, { name: e.target.value })}/>
+            <select className="fit-sel" value={r.type || "fixed_dp"} onChange={e => setRow(i, { type: e.target.value })}>
+              <option value="fixed_dp">Fixed ΔP</option><option value="filter">Filter</option><option value="control_kv">Valve Kv/Cv</option>
+            </select>
+            <select className="fit-sel" value={r.side || "discharge"} onChange={e => setRow(i, { side: e.target.value })}>
+              <option value="suction">Suction</option><option value="discharge">Discharge</option>
+            </select>
+            <select className="fit-sel" value={r.flowBasis || "total"} onChange={e => setRow(i, { flowBasis: e.target.value })} title="Flow basis">
+              <option value="total">Total flow</option><option value="per_pump">Each branch</option>
+            </select>
+            <button className="cat-del" onClick={() => onChange(rows.filter((_, j) => j !== i))} aria-label={`Remove equipment ${i + 1}`}>×</button>
+          </div>
+          {r.type === "control_kv" ? (
+            <div style={{display:"grid", gridTemplateColumns:"70px 1fr", gap:4}}>
+              <select className="fit-sel" value={r.coeffType || (U.US ? "Cv" : "Kv")} onChange={e => setRow(i, { coeffType: e.target.value })}>
+                <option value="Kv">Kv</option><option value="Cv">Cv</option>
+              </select>
+              <input className="cat-in" type="number" min="0.01" step="1"
+                value={(r.coeffType || (U.US ? "Cv" : "Kv")) === "Cv" ? (r.cv ?? "") : (r.kv ?? "")}
+                onChange={e => (r.coeffType || (U.US ? "Cv" : "Kv")) === "Cv"
+                  ? setRow(i, { cv: Math.max(0.01, num(e.target.value)), kv: undefined })
+                  : setRow(i, { kv: Math.max(0.01, num(e.target.value)), cv: undefined })}/>
+            </div>
+          ) : (
+            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:4}}>
+              <label className="mono" style={{fontSize:9}}>Qref {U.unit("flow")}<input className="cat-in" type="number" min="0.01" value={U.conv("flow", r.qRef || 0)} onChange={e => setRow(i, { qRef: Math.max(0.01, U.toSI("flow", num(e.target.value))) })}/></label>
+              <label className="mono" style={{fontSize:9}}>Clean {U.unit("press")}<input className="cat-in" type="number" min="0" value={U.conv("press", r.dpClean_kPa || 0)} onChange={e => setRow(i, { dpClean_kPa: Math.max(0, U.toSI("press", num(e.target.value))) })}/></label>
+              <label className="mono" style={{fontSize:9}}>Dirty {U.unit("press")}<input className="cat-in" type="number" min="0" value={U.conv("press", r.dpDirty_kPa || 0)} onChange={e => setRow(i, { dpDirty_kPa: Math.max(0, U.toSI("press", num(e.target.value))) })}/></label>
+            </div>
+          )}
+        </div>
+      ))}
+      <button className="btn" style={{width:"100%"}} onClick={addRow}>+ add equipment / valve</button>
+    </div>
+  );
+};
+
 // Pipe schedule picker: DN + schedule -> sets ID (mm).
 const PipePicker = ({ id_mm, onPick }) => {
   const PM = window.PumpMath;
@@ -154,11 +204,14 @@ const PipePicker = ({ id_mm, onPick }) => {
 
 const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSystem || "SI");
   const { fluid, sys, pump, op, meta = {} } = state;
+  const scenario = state.scenario || {};
 
   const set = (group) => (patch) =>
     setState(s => ({ ...s, [group]: { ...s[group], ...patch } }));
   const setMeta = (patch) =>
     setState(s => ({ ...s, meta: { ...s.meta, ...patch } }));
+  const setScenario = (patch) =>
+    setState(s => ({ ...s, scenario: { ...(s.scenario || {}), ...patch } }));
 
   // Manual edit of a fluid property drops the preset link -> switch to Custom.
   const setFluidProp = (patch) =>
@@ -168,14 +221,17 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
   const pm = window.PumpMath;
   const duty = window.computeDuty(state);
   const {
-    fitS, fitD, sumKs, sumKd, sysEff, effPump, affinity, affinityOutOfBounds, nSet, arrange,
+    fitS, fitD, sumKs, sumKd, sysEff, effPump, affinity, affinityOutOfBounds, nSet, arrange, installedPumps,
+    parallelImbalancePct, branchFlowFactor, worstBranchQ,
+    validationErrors, validationWarnings, inputValid, boilingRisk,
     dutyQ, dutyPoint, noDutyPoint, Qmax,
     opH, opEta, opNPSHr, opNPSHa, perQ, perH,
-    Phyd, PbrakePer, Pbrake, motorEff, Pmotor, motor,
+    Phyd, PbrakePer, Pbrake, motorEff, Pmotor, motor, motorMargin, motorBasisPer, maxBhpPer, maxBhpQ,
     Ns, Nss, vSuction, vDischarge, hfSuction, hfDischarge,
     staticLift, presHead, TDH, Re_s, flowRegimeS, transitionalFlow,
+    equipmentLoss, equipmentClean, equipmentDirty,
     hasGenericReducer, minorLossesApprox,
-    design, ratedQ, ratedHsys, ratedLeftOfBEP,
+    design, ratedQ, ratedHsys, ratedLeftOfBEP, ratedBepPct, ratedInPOR, ratedInAOR,
     speedForDuty, speedForDutyStatus, speedForDutyClamped, speedTargetAffinityOk,
     minVfd, minVfdStatus, minVfdClamped, minVfdInvalid,
     econ, en,
@@ -185,8 +241,10 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
     catalogRatedExtrap, catalogRatedExtrapolated,
     catalogSelectedExtrap, catalogSelectedExtrapolated,
     fluidPropsEstimated,
-    npshRatio, npshMarginAbs, margin, ratioActual, cavOk,
-    bepQ, bepPct, qMin, belowMinFlow, highSuctionEnergy, inPOR,
+    npshRatio, npshMarginAbs, margin, ratioActual, npshRatioOk, npshAbsOk, cavOk,
+    worstNPSHa, worstNPSHr, worstNpshMargin, worstNpshRatio, worstCavOk, scenarioResults, stagingResults,
+    bepQ, bepPct, qMcsf, qThermal, qMin, belowMinFlow, nssLimit, highSuctionEnergy,
+    porMinPct, porMaxPct, aorMinPct, aorMaxPct, inPOR, inAOR,
     sN, sD,
   } = duty;
   const speedLabel =
@@ -212,6 +270,21 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
   const setCat = (i, key, val) => {
     const next = catalog.map((r, j) => j === i ? { ...r, [key]: val } : r);
     set("pump")({ catalog: next });
+  };
+  const catDisplay = (row, key) => {
+    if (!Number.isFinite(row[key])) return "";
+    if (key === "q") return +U.conv("flow", row[key]).toFixed(3);
+    if (key === "h" || key === "npshr") return +U.conv("head", row[key]).toFixed(3);
+    if (key === "eta") return +(row[key] * 100).toFixed(2);
+    return row[key];
+  };
+  const setCatDisplay = (i, key, raw) => {
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) { setCat(i, key, NaN); return; }
+    const value = key === "q" ? U.toSI("flow", parsed)
+      : (key === "h" || key === "npshr") ? U.toSI("head", parsed)
+      : key === "eta" ? parsed / 100 : parsed;
+    setCat(i, key, value);
   };
   const addCat = () => {
     const last = catalog[catalog.length - 1] || { q: 0, h: 0 };
@@ -240,6 +313,13 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
     CrudeOil:   { name: "Crude oil (light)",    rho: 850,  mu: 10,    Pvap_kPa: 0.3,   Tref: 20, cat: "organic" },
     Slurry:     { name: "Slurry (10% solids)",  rho: 1080, mu: 5.0,   Pvap_kPa: 2.34,  Tref: 20, cat: "aqueous" },
   };
+  const fluidLimits = (p) => {
+    if (!p) return { min: -50, max: 200, freeze: null };
+    if (p.cat === "water") return { min: 0, max: 99, freeze: 0 };
+    if (p.cat === "aqueous") return { min: -10, max: 100, freeze: -10 };
+    if (p.cat === "mineral_acid") return { min: 0, max: 120, freeze: null };
+    return { min: -20, max: 120, freeze: null };
+  };
 
   const curPreset = fluidPresets[fluid.key];
   const tempC = fluid.tempC != null ? fluid.tempC : (curPreset ? curPreset.Tref : 20);
@@ -248,11 +328,18 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
     if (key === "Custom") { set("fluid")({ key: "Custom" }); return; }
     const p = fluidPresets[key];
     const dp = pm.deriveProps(p, T);
+    const limits = fluidLimits(p);
     setState(s => ({
       ...s,
-      fluid: { ...s.fluid, key, tempC: T },
+      fluid: { ...s.fluid, key, tempC: T, validMinC: limits.min, validMaxC: limits.max, freezeC: limits.freeze },
       sys: { ...s.sys, rho: dp.rho, mu: dp.mu, Pvap_kPa: dp.Pvap_kPa },
     }));
+  };
+  const applyWorstTemperature = (T) => {
+    const p = fluidPresets[fluid.key];
+    if (!p) { setScenario({ maxTempC: T }); return; }
+    const dp = pm.deriveProps(p, T);
+    setScenario({ maxTempC: T, PvapMax_kPa: dp.Pvap_kPa, rhoMax: dp.rho });
   };
 
   const fluidName = fluid.key === "Custom"
@@ -260,12 +347,17 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
     : (fluidPresets[fluid.key] ? fluidPresets[fluid.key].name : fluid.key);
   const tagLabel = String(meta.tag || "").trim();
   const criticalFlags = [
-    noDutyPoint && "No achievable duty point - pump/system mismatch",
+    ...validationErrors,
+    noDutyPoint && inputValid && "No achievable duty point - pump/system mismatch",
     affinityOutOfBounds && `Affinity limits exceeded - ${affinity.messages.join(", ")}`,
     belowMinFlow && "Below minimum flow - recirculation / overheating",
-    !noDutyPoint && !cavOk && `NPSH ratio ${ratioActual.toFixed(2)} < ${npshRatio.toFixed(2)} req.`,
+    !noDutyPoint && !npshRatioOk && `NPSH ratio ${ratioActual.toFixed(2)} < ${npshRatio.toFixed(2)} required`,
+    !noDutyPoint && !npshAbsOk && `NPSH absolute margin ${U.fmt("head", margin, 2)} ${U.unit("head")} < ${U.fmt("head", npshMarginAbs, 2)} required`,
+    !worstCavOk && "Worst-case rated NPSH acceptance fails",
+    boilingRisk && "Suction absolute pressure is at or below vapor pressure",
   ].filter(Boolean);
   const cautionFlags = [
+    ...validationWarnings,
     speedForDutyClamped && "VFD target outside 150-6000 rpm",
     vfdAffinityWarn && "VFD target outside affinity range",
     minVfdClamped && "Min static VFD speed outside 150-6000 rpm",
@@ -278,7 +370,10 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
     catalogHeadFlattened && "Catalog head data flattened - check rising/unstable curve",
     transitionalFlow && "Transitional suction Reynolds number",
     viscHighRisk && "Vendor viscous curve required",
-    !ratedLeftOfBEP && "Rated flow right of BEP - select larger pump",
+    !ratedInAOR && `Required rated point outside AOR (${ratedBepPct.toFixed(0)}% BEP)`,
+    ratedInAOR && !ratedInPOR && `Required rated point outside POR (${ratedBepPct.toFixed(0)}% BEP)`,
+    installedPumps > nSet && `${installedPumps - nSet} installed standby pump(s) excluded from operating energy`,
+    parallelImbalancePct > 0 && `Parallel branch +${parallelImbalancePct}% flow imbalance applied to per-pump NPSHr and motor loading`,
   ].filter(Boolean);
   const assumptionFlags = [
     curveEstimated && "Estimated pump curve - add vendor catalog points",
@@ -297,7 +392,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
       <div className="panel">
         <div className="panel-header">
           <h3>System · Inputs</h3>
-          <span className="badge">SI</span>
+          <span className="badge">{U.system}</span>
         </div>
 
         <div className="section">
@@ -352,10 +447,10 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
               <div className="range-caps"><span>{U.conv("temp", 0).toFixed(0)}</span><span>{U.conv("temp", curPreset && curPreset.cat === "water" ? 99 : 180).toFixed(0)}{U.unit("temp")}</span></div>
             </div>
           )}
-          <Field label="Density" sub="ρ" value={sys.rho} qty="dens" step={1} onChange={v => setFluidProp({ rho: v })}/>
-          <Field label="Viscosity" sub="μ" value={sys.mu} unit="cP" step={0.1} onChange={v => setFluidProp({ mu: v })}/>
-          <Field label="Vapor pressure" sub="Pv" value={sys.Pvap_kPa} qty="press" step={0.1} onChange={v => setFluidProp({ Pvap_kPa: v })}/>
-          <Field label="Atmospheric" sub="Patm" value={sys.Patm_kPa} qty="press" step={0.5} onChange={v => set("sys")({ Patm_kPa: v })}/>
+          <Field label="Density" sub="ρ" value={sys.rho} qty="dens" step={1} min={1} onChange={v => setFluidProp({ rho: v })}/>
+          <Field label="Viscosity" sub="μ" value={sys.mu} unit="cP" step={0.1} min={0.01} onChange={v => setFluidProp({ mu: v })}/>
+          <Field label="Vapor pressure" sub="Pv" value={sys.Pvap_kPa} qty="press" step={0.1} min={0} onChange={v => setFluidProp({ Pvap_kPa: v })}/>
+          <Field label="Atmospheric" sub="Patm" value={sys.Patm_kPa} qty="press" step={0.5} min={1} onChange={v => set("sys")({ Patm_kPa: v })}/>
         </div>
 
         <div className="section">
@@ -367,10 +462,23 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         </div>
 
         <div className="section">
+          <div className="section-title"><span>Operating scenarios</span><span className="hint">min · normal · max</span></div>
+          <Field label="Suction level · min" value={scenario.ZsMin ?? sys.Zs} qty="head" step={0.5} onChange={v => setScenario({ ZsMin: v })}/>
+          <Field label="Suction level · max" value={scenario.ZsMax ?? sys.Zs} qty="head" step={0.5} onChange={v => setScenario({ ZsMax: v })}/>
+          <Field label="Discharge level · min" value={scenario.ZdMin ?? sys.Zd} qty="head" step={0.5} onChange={v => setScenario({ ZdMin: v })}/>
+          <Field label="Discharge level · max" value={scenario.ZdMax ?? sys.Zd} qty="head" step={0.5} onChange={v => setScenario({ ZdMax: v })}/>
+          <Field label="Minimum atmospheric" value={scenario.PatmMin_kPa ?? sys.Patm_kPa} qty="press" step={0.5} min={1} onChange={v => setScenario({ PatmMin_kPa: v })}/>
+          <Field label="Maximum fluid temperature" value={scenario.maxTempC ?? tempC} qty="temp" step={1} onChange={applyWorstTemperature}/>
+          <Field label="Maximum vapor pressure" value={scenario.PvapMax_kPa ?? sys.Pvap_kPa} qty="press" step={0.1} min={0} onChange={v => setScenario({ PvapMax_kPa: v })}/>
+          <Field label="Maximum density" value={scenario.rhoMax ?? sys.rho} qty="dens" step={1} min={1} onChange={v => setScenario({ rhoMax: v })}/>
+        </div>
+
+        <div className="section">
           <div className="section-title"><span>Suction line</span><span className="hint">ΣK {sumKs.toFixed(2)}</span></div>
           <PipePicker id_mm={sys.Ds} onPick={id => set("sys")({ Ds: id })} />
           <Field label="Inside diameter" sub="D" value={sys.Ds} qty="dia" step={1} min={1} onChange={v => set("sys")({ Ds: Number.isFinite(v) ? Math.max(1, v) : v })}/>
-          <Field label="Length" sub="L" value={sys.Ls} qty="len" step={0.5} onChange={v => set("sys")({ Ls: v })}/>
+          <Field label="Length" sub="L" value={sys.Ls} qty="len" step={0.5} min={0} onChange={v => set("sys")({ Ls: v })}/>
+          <Field label="Pipe roughness" sub="εs" value={sys.epsS ?? sys.eps} qty="dia" step={0.01} min={0} onChange={v => set("sys")({ epsS: v })}/>
           <FittingsTable list={fitS} onChange={(next) => set("sys")({ fitS: next })} />
         </div>
 
@@ -378,9 +486,20 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           <div className="section-title"><span>Discharge line</span><span className="hint">ΣK {sumKd.toFixed(2)}</span></div>
           <PipePicker id_mm={sys.Dd} onPick={id => set("sys")({ Dd: id })} />
           <Field label="Inside diameter" sub="D" value={sys.Dd} qty="dia" step={1} min={1} onChange={v => set("sys")({ Dd: Number.isFinite(v) ? Math.max(1, v) : v })}/>
-          <Field label="Length" sub="L" value={sys.Ld} qty="len" step={0.5} onChange={v => set("sys")({ Ld: v })}/>
+          <Field label="Length" sub="L" value={sys.Ld} qty="len" step={0.5} min={0} onChange={v => set("sys")({ Ld: v })}/>
           <FittingsTable list={fitD} onChange={(next) => set("sys")({ fitD: next })} />
-          <Field label="Pipe roughness" sub="ε" value={sys.eps} qty="dia" step={0.01} onChange={v => set("sys")({ eps: v })}/>
+          <Field label="Pipe roughness" sub="εd" value={sys.epsD ?? sys.eps} qty="dia" step={0.01} min={0} onChange={v => set("sys")({ epsD: v })}/>
+        </div>
+
+        <div className="section">
+          <div className="section-title"><span>Equipment losses</span><span className="hint">Kv/Cv · clean/dirty</span></div>
+          <div className="field" style={{gridTemplateColumns:"1fr 100px"}}>
+            <div className="name">Active condition</div>
+            <select className="fit-sel" value={sys.equipmentCondition || "clean"} onChange={e => set("sys")({ equipmentCondition: e.target.value })}>
+              <option value="clean">Clean</option><option value="dirty">Dirty</option>
+            </select>
+          </div>
+          <EquipmentTable list={sys.equipment || []} onChange={equipment => set("sys")({ equipment })}/>
         </div>
 
         <div className="section">
@@ -395,15 +514,19 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
               <option value="series">Series</option>
             </select>
           </div>
+          <Field label="Installed pumps" sub="incl. standby" value={pump.installedPumps ?? (arrange === "single" ? 1 : nSet)} unit="×" step={1} min={1} max={12} onChange={v => set("pump")({ installedPumps: Math.round(v) })}/>
           {arrange !== "single" && (
-            <Field label="No. of pumps" sub="n" value={pump.nPumps ?? 2} unit="×" step={1} min={2} max={6} onChange={v => set("pump")({ nPumps: Math.round(v) })}/>
+            <Field label="Operating pumps" sub="n" value={pump.nPumps ?? 2} unit="×" step={1} min={2} max={6} onChange={v => set("pump")({ nPumps: Math.round(v), installedPumps: Math.max(Math.round(v), pump.installedPumps || 1) })}/>
           )}
-          <Field label="BEP flow" sub="Q_bep" value={pump.Qb} qty="flow" step={1} onChange={v => set("pump")({ Qb: v })}/>
-          <Field label="BEP head" sub="H_bep" value={pump.Hb} qty="head" step={0.5} onChange={v => set("pump")({ Hb: v })}/>
+          {arrange === "parallel" && (
+            <Field label="Branch flow imbalance" sub="max +%" value={pump.parallelImbalancePct ?? 0} unit="%" step={1} min={0} max={50} onChange={v => set("pump")({ parallelImbalancePct: v })}/>
+          )}
+          <Field label="BEP flow" sub="Q_bep" value={pump.Qb} qty="flow" step={1} min={0.01} onChange={v => set("pump")({ Qb: v })}/>
+          <Field label="BEP head" sub="H_bep" value={pump.Hb} qty="head" step={0.5} min={0.01} onChange={v => set("pump")({ Hb: v })}/>
           <Field label="Max efficiency" sub="η_max" value={pump.etaMax} unit="—" step={0.01} min={0.3} max={0.9} onChange={v => set("pump")({ etaMax: v })}/>
-          <Field label="NPSHr at BEP" value={pump.NPSHr_bep} qty="head" step={0.1} onChange={v => set("pump")({ NPSHr_bep: v })}/>
-          <Field label="Ref. speed" sub="N₀" value={pump.N0} unit="rpm" step={50} onChange={v => set("pump")({ N0: v })}/>
-          <Field label="Ref. impeller" sub="D₀" value={pump.D0} qty="dia" step={1} onChange={v => set("pump")({ D0: v })}/>
+          <Field label="NPSHr at BEP" value={pump.NPSHr_bep} qty="head" step={0.1} min={0} onChange={v => set("pump")({ NPSHr_bep: v })}/>
+          <Field label="Ref. speed" sub="N₀" value={pump.N0} unit="rpm" step={50} min={1} onChange={v => set("pump")({ N0: v })}/>
+          <Field label="Ref. impeller" sub="D₀" value={pump.D0} qty="dia" step={1} min={1} onChange={v => set("pump")({ D0: v })}/>
         </div>
 
         <div className="section">
@@ -422,20 +545,20 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
             <div style={{padding:"4px var(--pad) 8px"}}>
               <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr 18px", gap:4, alignItems:"center",
                            fontSize:9, letterSpacing:"0.06em", textTransform:"uppercase", color:"var(--mute)", marginBottom:4}}>
-                <span>Q m³/h</span><span>H m</span><span>η —</span><span>NPSHr</span><span></span>
+                <span>Q {U.unit("flow")}</span><span>H {U.unit("head")}</span><span>η %</span><span>NPSHr {U.unit("head")}</span><span></span>
               </div>
               {catalog.map((r, i) => (
                 <div key={i} style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr 18px", gap:4, alignItems:"center", marginBottom:3}}>
-                  <input className="cat-in" type="number" value={r.q ?? ""}     step={1}    onChange={e => setCat(i, "q", parseFloat(e.target.value))}/>
-                  <input className="cat-in" type="number" value={r.h ?? ""}     step={0.5}  onChange={e => setCat(i, "h", parseFloat(e.target.value))}/>
-                  <input className="cat-in" type="number" value={r.eta ?? ""}   step={0.01} onChange={e => setCat(i, "eta", parseFloat(e.target.value))}/>
-                  <input className="cat-in" type="number" value={r.npshr ?? ""} step={0.1}  onChange={e => setCat(i, "npshr", parseFloat(e.target.value))}/>
+                  <input className="cat-in" type="number" min="0" value={catDisplay(r, "q")} step={1} onChange={e => setCatDisplay(i, "q", e.target.value)}/>
+                  <input className="cat-in" type="number" min="0" value={catDisplay(r, "h")} step={0.5} onChange={e => setCatDisplay(i, "h", e.target.value)}/>
+                  <input className="cat-in" type="number" min="0" max="95" value={catDisplay(r, "eta")} step={0.5} onChange={e => setCatDisplay(i, "eta", e.target.value)}/>
+                  <input className="cat-in" type="number" min="0" value={catDisplay(r, "npshr")} step={0.1} onChange={e => setCatDisplay(i, "npshr", e.target.value)}/>
                   <button className="cat-del" onClick={() => delCat(i)} title="remove row" aria-label={`Remove catalog point ${i + 1}`}>×</button>
                 </div>
               ))}
               <button className="btn" style={{marginTop:4, width:"100%"}} onClick={addCat}>+ add point</button>
               <div style={{fontSize:10, color:"var(--mute)", marginTop:6, lineHeight:1.4}}>
-                Head uses monotone interpolation through entered points; rising head entries are flattened and flagged. Enter at least two η and NPSHr points to avoid estimated auxiliary curves. High-flow η extrapolation is not allowed to increase. Points are at N₀, D₀.
+                Values follow the active {U.system} unit system; efficiency is entered as percent. Invalid points are blocked and reported. Head uses monotone interpolation through entered points; rising head entries are flattened and flagged. Points are at N₀, D₀.
               </div>
             </div>
           )}
@@ -445,7 +568,14 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           <div className="section-title"><span>Acceptance limits</span><span className="hint">HI 9.6</span></div>
           <Field label="NPSH margin ratio" sub="req." value={pump.npshRatio ?? 1.3} unit="×" step={0.05} min={1} max={2} onChange={v => set("pump")({ npshRatio: v })}/>
           <Field label="NPSH abs. margin" sub="min" value={pump.npshMarginAbs ?? 0.6} qty="head" step={0.1} min={0} onChange={v => set("pump")({ npshMarginAbs: v })}/>
-          <Field label="Min flow" sub="% BEP" value={pump.minFlowPct ?? 45} unit="%" step={1} min={0} max={100} onChange={v => set("pump")({ minFlowPct: v })}/>
+          <Field label="MCSF" sub="% BEP" value={pump.minFlowPct ?? 45} unit="%" step={1} min={0} max={100} onChange={v => set("pump")({ minFlowPct: v })}/>
+          <Field label="Thermal minimum" sub="per pump" value={pump.thermalMinFlow ?? 0} qty="flow" step={1} min={0} onChange={v => set("pump")({ thermalMinFlow: v })}/>
+          <Field label="POR minimum" value={pump.porMinPct ?? 70} unit="% BEP" step={1} min={0} max={200} onChange={v => set("pump")({ porMinPct: v })}/>
+          <Field label="POR maximum" value={pump.porMaxPct ?? 120} unit="% BEP" step={1} min={0} max={200} onChange={v => set("pump")({ porMaxPct: v })}/>
+          <Field label="AOR minimum" value={pump.aorMinPct ?? 50} unit="% BEP" step={1} min={0} max={200} onChange={v => set("pump")({ aorMinPct: v })}/>
+          <Field label="AOR maximum" value={pump.aorMaxPct ?? 130} unit="% BEP" step={1} min={0} max={200} onChange={v => set("pump")({ aorMaxPct: v })}/>
+          <Field label="Nss screening limit" value={pump.nssLimit ?? 213} unit="—" step={5} min={1} onChange={v => set("pump")({ nssLimit: v })}/>
+          <Field label="Motor sizing margin" value={pump.motorMarginPct ?? 15} unit="%" step={1} min={0} max={50} onChange={v => set("pump")({ motorMarginPct: v })}/>
           <div className="field" style={{gridTemplateColumns:"1fr 130px"}}>
             <div className="name">Test grade</div>
             <select className="fit-sel" value={pump.tolGrade || "ISO 2B"}
@@ -456,7 +586,18 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         </div>
 
         <div className="section">
-          <div className="section-title"><span>Design margins</span><span className="hint">rated point</span></div>
+          <div className="section-title"><span>Required duty</span><span className="hint">independent target</span></div>
+          <Field label="Required flow" sub="Qreq" value={design.requiredQ ?? op.Q} qty="flow" step={1} min={0.01} onChange={v => setState(s => ({ ...s, design: { ...design, requiredQ: v }, op: { ...s.op, Q: v } }))}/>
+          <div className="field" style={{gridTemplateColumns:"1fr 130px"}}>
+            <div className="name">Required head basis</div>
+            <select className="fit-sel" value={design.headMode || "system"} onChange={e => setState(s => ({ ...s, design: { ...design, headMode: e.target.value } }))}>
+              <option value="system">System @ Qreq</option><option value="manual">Manual head</option>
+            </select>
+          </div>
+          {design.headMode === "manual" && (
+            <Field label="Required head" sub="Hreq" value={design.requiredH ?? 0} qty="head" step={0.5} min={0}
+              onChange={v => setState(s => ({ ...s, design: { ...design, requiredH: v } }))}/>
+          )}
           <Field label="Flow margin" sub="+%" value={design.flowMargin} unit="%" step={1} min={0} max={30} onChange={v => setState(s => ({ ...s, design: { ...design, flowMargin: v } }))}/>
           <Field label="Head margin" sub="+%" value={design.headMargin} unit="%" step={1} min={0} max={20} onChange={v => setState(s => ({ ...s, design: { ...design, headMargin: v } }))}/>
         </div>
@@ -497,7 +638,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         <div className="center-header">
           <div className="title-group">
             <h2>Performance · Pump &amp; System</h2>
-            <span className="meta">TAG  {tagLabel}  ·  {fluidName}  ·  {arrange === "single" ? "1 pump" : `${nSet}× ${arrange}`}  ·  N={pump.N} rpm  ·  D={pump.D} mm</span>
+            <span className="meta">TAG  {tagLabel}  ·  {fluidName}  ·  {nSet} operating / {installedPumps} installed  ·  {arrange}  ·  N={pump.N} rpm  ·  D={pump.D} mm</span>
           </div>
           <div className="legend">
             <span><span className="sw" style={{borderColor:"var(--ink)"}}></span>H(Q)</span>
@@ -511,14 +652,18 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         <div className="chart-wrap">
           <window.PumpChart
             pump={effPump} sys={sysEff}
-            op={op} rated={{ Q: ratedQ, H: ratedHsys }}
+            op={{ ...op, Q: design.requiredQ ?? op.Q }} rated={{ Q: ratedQ, H: ratedHsys }}
             showSpeedFamily={!!pump.showSpeedFamily}
             tol={pm.TOLERANCES[pump.tolGrade || "ISO 2B"]}
             U={U}
             Qmax={Qmax}
             dutyPoint={dutyPoint}
             targetSpeedLabel={speedLabel}
-            setOp={(patch) => setState(s => ({ ...s, op: { ...s.op, ...patch } }))}
+            setOp={(patch) => setState(s => ({
+              ...s,
+              op: { ...s.op, ...patch },
+              design: { ...s.design, ...(Number.isFinite(patch.Q) ? { requiredQ: patch.Q } : {}) },
+            }))}
           />
         </div>
 
@@ -536,10 +681,10 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           <div style={{display:"flex", gap:8}}>
             <button className="btn" onClick={() => {
               // Snap op point to system intersection (duty point) — on the effective curve
-              setState(s => ({ ...s, op: { ...s.op, Q: dutyPoint.Q || s.op.Q } }));
+              setState(s => ({ ...s, op: { ...s.op, Q: dutyPoint.Q || s.op.Q }, design: { ...s.design, requiredQ: dutyPoint.Q || s.op.Q } }));
             }}>↳ Snap to duty</button>
             <button className="btn" onClick={() => {
-              setState(s => ({ ...s, op: { ...s.op, Q: bepQ } }));
+              setState(s => ({ ...s, op: { ...s.op, Q: bepQ }, design: { ...s.design, requiredQ: bepQ } }));
             }}>↳ Snap to BEP</button>
           </div>
         </div>
@@ -598,6 +743,13 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           </div>
         )}
 
+        {!inputValid && (
+          <div className="callout bad">
+            <div className="title"><span>Invalid engineering inputs</span><span className="mono">calculation blocked</span></div>
+            <div className="sub">{validationErrors.join(" · ")}</div>
+          </div>
+        )}
+
         <div className={"callout " + (!noDutyPoint && cavOk ? "ok" : "bad")}>
           <div className="title"><span>Cavitation check</span><span className="mono">NPSHa / NPSHr</span></div>
           <div className="big">{ratioActual > 90 ? "—" : ratioActual.toFixed(2)}<span style={{fontSize:12, color:"var(--mute)"}}> ×  (req ≥ {npshRatio.toFixed(2)})</span></div>
@@ -607,22 +759,39 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           </div>
         </div>
 
+        <div className={"callout " + (worstCavOk ? "ok" : "bad")}>
+          <div className="title"><span>Worst-case rated NPSH</span><span className="mono">min level · max T · dirty</span></div>
+          <div className="big">{worstNpshRatio > 90 ? "—" : worstNpshRatio.toFixed(2)}<span style={{fontSize:12, color:"var(--mute)"}}> ×</span></div>
+          <div className="sub">NPSHa {U.fmt("head", worstNPSHa, 2)} − NPSHr {U.fmt("head", worstNPSHr, 2)} = {U.fmt("head", worstNpshMargin, 2)} {U.unit("head")} · {worstCavOk ? "OK" : "REVIEW"}</div>
+        </div>
+
+        <div className="section">
+          <div className="section-title"><span>Scenario envelope</span><span className="hint">predicted intersections</span></div>
+          {scenarioResults.map(row => <KV key={row.key} k={row.label} v={U.fmt("flow", row.Q, 1)} u={`${U.unit("flow")} @ ${U.fmt("head", row.H, 1)} ${U.unit("head")}`} />)}
+          <KV k="Equipment clean / dirty" v={`${U.fmt("head", equipmentClean.total, 2)} / ${U.fmt("head", equipmentDirty.total, 2)}`} u={U.unit("head")} />
+          {stagingResults.map(row => <KV key={`stage-${row.count}`} k={`Stage · ${row.label}`} v={U.fmt("flow", row.Q, 1)} u={`${U.unit("flow")} @ ${U.fmt("head", row.H, 1)} ${U.unit("head")}`} />)}
+          {arrange === "parallel" && <KV k="Worst branch flow" v={U.fmt("flow", worstBranchQ, 1)} u={`${U.unit("flow")} · +${parallelImbalancePct}%`} />}
+        </div>
+
         <div className="section">
           <div className="section-title"><span>Head breakdown</span><span className="hint">{U.unit("head")} of fluid</span></div>
           <KV k="Static lift ΔZ"      v={U.fmt("head", staticLift, 2)}  u={U.unit("head")} />
           <KV k="Vessel ΔP head"      v={U.fmt("head", presHead, 2)}    u={U.unit("head")} />
           <KV k="Friction · suction"  v={U.fmt("head", hfSuction, 3)}   u={U.unit("head")} />
           <KV k="Friction · discharge"v={U.fmt("head", hfDischarge, 3)} u={U.unit("head")} />
+          <KV k="Equipment · suction" v={U.fmt("head", equipmentLoss.suction, 3)} u={U.unit("head")} />
+          <KV k="Equipment · discharge" v={U.fmt("head", equipmentLoss.discharge, 3)} u={U.unit("head")} />
           <KV k="TDH (system)"        v={U.fmt("head", TDH, 2)}         u={U.unit("head")} />
           <KV k="H delivered"         v={U.fmt("head", opH, 2)}         u={U.unit("head")} />
         </div>
 
         <div className="section">
-          <div className="section-title"><span>Duty vs rated</span><span className="hint">+{design.flowMargin}% Q / +{design.headMargin}% H</span></div>
-          <KV k="Duty flow"    v={U.fmt("flow", dutyQ, 1)}    u={U.unit("flow")} />
+          <div className="section-title"><span>Required vs predicted</span><span className="hint">+{design.flowMargin}% Q / +{design.headMargin}% H</span></div>
+          <KV k="Required flow" v={U.fmt("flow", design.requiredQ ?? op.Q, 1)} u={U.unit("flow")} />
+          <KV k="Predicted flow" v={U.fmt("flow", dutyQ, 1)} u={U.unit("flow")} />
           <KV k="Rated flow"   v={U.fmt("flow", ratedQ, 1)}   u={U.unit("flow")} />
           <KV k="Rated head"   v={U.fmt("head", ratedHsys, 2)} u={U.unit("head")} />
-          <div className="kv"><span className="k">Rated vs BEP</span><span className="v" style={{color: ratedLeftOfBEP ? "var(--ok)" : "var(--warn)"}}>{ratedLeftOfBEP ? "left of BEP ✓" : "right of BEP"}</span><span className="u"></span></div>
+          <div className="kv"><span className="k">Rated operating region</span><span className="v" style={{color: ratedInPOR ? "var(--ok)" : ratedInAOR ? "var(--warn)" : "var(--bad)"}}>{ratedInPOR ? "in POR" : ratedInAOR ? "in AOR" : "outside AOR"}</span><span className="u">{ratedBepPct.toFixed(0)}% BEP</span></div>
         </div>
 
         <div className="section">
@@ -632,6 +801,8 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           <KV k={arrange === "single" ? "Shaft (BHP)" : "Shaft · total"} v={U.fmt("power", Pbrake, 2)}  u={U.unit("power")} />
           <KV k={`Motor input (η=${(motorEff * 100).toFixed(1)}%)`} v={U.fmt("power", Pmotor, 2)} u={U.unit("power")} />
           <KV k="Motor select · ea."   v={`≥ ${motorSelectText}`} u={U.US ? "hp" : "kW"} />
+          <KV k="Motor envelope max · ea." v={U.fmt("power", maxBhpPer, 2)} u={`${U.unit("power")} @ ${U.fmt("flow", maxBhpQ, 0)} ${U.unit("flow")}`} />
+          <KV k="Motor sizing basis · ea." v={U.fmt("power", motorBasisPer, 2)} u={`${U.unit("power")} × ${motorMargin.toFixed(2)}`} />
         </div>
 
         <div className="section">
@@ -646,8 +817,10 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
           <div className="section-title"><span>Operating limits</span><span className="hint">stability</span></div>
           <KV k="Duty / BEP"        v={bepPct.toFixed(0)}   u="%" />
           <div className="kv"><span className="k">Min continuous flow</span><span className="v" style={{color: belowMinFlow ? "var(--bad)" : "var(--ink)"}}>{U.fmt("flow", qMin, 1)}</span><span className="u">{U.unit("flow")}</span></div>
-          <div className="kv"><span className="k">Preferred region</span><span className="v" style={{color: inPOR ? "var(--ok)" : "var(--warn)"}}>{inPOR ? "in POR" : "outside"}</span><span className="u"></span></div>
+          <div className="kv"><span className="k">Operating region</span><span className="v" style={{color: inPOR ? "var(--ok)" : inAOR ? "var(--warn)" : "var(--bad)"}}>{inPOR ? "in POR" : inAOR ? "in AOR" : "outside AOR"}</span><span className="u"></span></div>
           <div className="kv"><span className="k">Suction sp. speed Nss</span><span className="v" style={{color: highSuctionEnergy ? "var(--warn)" : "var(--ink)"}}>{Nss.toFixed(0)}</span><span className="u">—</span></div>
+          <KV k="MCSF" v={U.fmt("flow", qMcsf, 1)} u={U.unit("flow")} />
+          <KV k="Thermal minimum" v={U.fmt("flow", qThermal, 1)} u={U.unit("flow")} />
         </div>
 
         <div className="section">
@@ -668,7 +841,7 @@ const Calculator = ({ state, setState }) => {  U = window.makeUnits(state.unitSy
         </div>
 
         <div style={{padding:"10px var(--pad) 16px", color:"var(--mute)", fontSize:11, lineHeight:1.5}}>
-          Model: Darcy–Weisbach + Churchill friction · {curveEstimated ? "estimated parametric pump curve" : "monotone catalog interpolation with data-completeness, extrapolation, and flattening flags"} · bounded affinity Q∝ND, H∝(ND)² · flow/Ns-aware screening viscous correction with conservative NPSHr factor · generic fitting K library · configurable NPSH ratio and absolute margin · min flow &amp; Nss stability limits · Ns = N·√Q/H<sup>0.75</sup>.
+          Screening/duty-checking model: Darcy–Weisbach + Churchill friction · separate suction/discharge roughness · Kv/Cv and clean/dirty equipment losses · {curveEstimated ? "estimated parametric pump curve" : "monotone catalog interpolation with validation and extrapolation flags"} · bounded affinity Q∝ND, H∝(ND)² · configurable POR/AOR, MCSF, thermal minimum, NPSH and Nss limits · worst-case scenario checks. Final procurement requires validated vendor curves and guarantee data.
         </div>
       </div>
     </div>

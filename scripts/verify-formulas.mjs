@@ -150,7 +150,7 @@ const baseState = {
   sys: { rho: 998, mu: 1.0, Pvap_kPa: 2.34, Patm_kPa: 101.3, Zs: 1.5, Zd: 19.5, Ps_kPa: 0, Pd_kPa: 0,
     Ds: 154.1, Ls: 8, Dd: 128.2, Ld: 85, eps: 0.046, fitS: [], fitD: [] },
   pump: { ...pump, npshRatio: 1.3, minFlowPct: 45, arrangement: "single", nPumps: 1 },
-  design: { flowMargin: 10, headMargin: 0 }, econ: { hours: 8000, price: 0.12 },
+  design: { requiredQ: 110, headMode: "system", flowMargin: 10, headMargin: 0 }, econ: { hours: 8000, price: 0.12 },
   unitSystem: "SI", op: { Q: 110 },
 };
 const d = computeDuty(baseState);
@@ -159,7 +159,11 @@ check("TDH equals delivered head at duty", d.TDH, d.opH, 1e-3);
 check("Pmotor = Pbrake/motorEff", d.Pmotor, d.Pbrake / d.motorEff, 1e-12);
 check("energy: kWh/yr = input*hours", d.en.kWhPerYear, d.en.input_kW * 8000, 1e-12);
 check("specific energy = input/Q", d.en.specific_kWh_m3, d.en.input_kW / d.dutyQ, 1e-12);
-check("rated Q = duty*1.10", d.ratedQ, d.dutyQ * 1.10, 1e-12);
+check("rated Q = required Q*1.10", d.ratedQ, 110 * 1.10, 1e-12);
+check("single operating-pump count", d.nSet, 1, 1e-12);
+check("single total shaft = per-pump shaft", d.Pbrake, d.PbrakePer, 1e-12);
+const eqSys = { ...baseState.sys, equipment: [{ type: "fixed_dp", side: "discharge", qRef: 100, dpClean_kPa: 10, dpDirty_kPa: 20 }] };
+check("equipment 10 kPa to head", PM.equipmentHead(100, eqSys, "discharge", "clean"), 10000 / (eqSys.rho * g), 1e-12);
 check("VFD: H(Qsel, Nsolved) = Hsys(Qsel)",
   PM.combinedH(d.selectedQ, { ...d.effPump, N: d.speedForDuty }), d.selectedHsys, 1e-3);
 

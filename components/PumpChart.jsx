@@ -93,10 +93,11 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
   const bepH = PM.combinedH(bepQ, pump);
 
   // Minimum continuous stable flow (per-pump scaled to set on Q axis)
-  const qMin = PM.minFlow(pump) * (arrange === "parallel" ? nSet : 1);
+  const setFlowMultiplier = arrange === "parallel" ? nSet : 1;
+  const qMin = Math.max(PM.minFlow(pump), pump.thermalMinFlow || 0) * setFlowMultiplier;
   // Suction specific speed flag (elevated recirculation risk)
   const nss = PM.suctionSpecificSpeed(pump);
-  const highSuctionEnergy = nss > 213;
+  const highSuctionEnergy = nss > (pump.nssLimit != null ? pump.nssLimit : 213);
 
   // System/pump intersection (combined)
   const cross = dutyPoint || PM.operatingPointCombined(pump, sys, Qmax);
@@ -179,8 +180,8 @@ const PumpChart = ({ pump, sys, op, setOp, rated, showSpeedFamily = false, tol, 
   };
 
   // Efficiency band shading (80% of BEP .. 110% of BEP) — preferred operating region
-  const porLo = bepQ * 0.8;
-  const porHi = bepQ * 1.1;
+  const porLo = bepQ * (pump.porMinPct != null ? pump.porMinPct : 70) / 100;
+  const porHi = bepQ * (pump.porMaxPct != null ? pump.porMaxPct : 120) / 100;
 
   return (
     <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{touchAction:"none"}}

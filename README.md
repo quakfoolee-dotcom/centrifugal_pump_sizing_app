@@ -5,16 +5,16 @@ Static, engineer-grade centrifugal pump sizing calculator built as a single-page
 ## What It Does
 
 - Computes the **system curve** and finds the **duty point** where the pump and system curves intersect — live, as you edit.
-- Draws live **pump & system curves** with a draggable target point, passive hover readout, RPM and impeller-trim sliders, BEP marker, and preferred-operating-region band.
+- Keeps the **required duty** independent from the predicted pump/system intersection and draws both on live curves with configurable POR/AOR limits.
 - Fits pump performance from catalog points `(Q, H, η, NPSHr)` by monotone interpolation with extrapolation/completeness flags, or uses a parametric model.
-- Models **hydraulics** with Darcy–Weisbach + Churchill friction, fittings-by-count (Crane TP-410 K-values), and separate suction/discharge static heads and vessel pressures.
-- Evaluates **NPSH & cavitation** — NPSHa vs NPSHr, configurable acceptance ratio (HI 9.6.1), suction specific speed with a high-suction-energy flag.
-- Flags **stability limits** — minimum continuous stable flow zone and preferred operating region.
+- Models **hydraulics** with Darcy–Weisbach + Churchill friction, separate suction/discharge roughness, fittings-by-count, fixed equipment ΔP, clean/dirty filters, and valve Kv/Cv.
+- Evaluates **normal and worst-case NPSH** with independent ratio/absolute-margin criteria, minimum level/atmosphere, maximum vapor pressure, dirty suction equipment, and configurable suction-specific-speed screening.
+- Flags **stability limits** — MCSF, thermal minimum flow, configurable preferred and allowable operating regions.
 - Applies **viscosity correction** (HI 9.6.7-style) to the live curve, with a water reference ghost curve.
 - Derives **fluid properties from temperature** — exact water correlations (Kell / Vogel / Antoine), generic corrections for other fluids, 20 presets + custom.
-- Handles **multi-pump** parallel / series arrangements with per-pump and total power split.
+- Handles **multi-pump** parallel / series arrangements with explicit operating versus installed/standby counts, one-unavailable/all-running staging, per-branch equipment flow basis, conservative branch-imbalance loading, and correct energy allocation.
 - Solves **VFD** speed-for-duty, minimum speed to hold static head, and a speed-family overlay.
-- Reports **energy & lifecycle** — annual energy, cost, and specific energy.
+- Sizes the **motor from the maximum absorbed-power envelope** across the AOR at maximum scenario density, then reports annual energy, cost, and specific energy at predicted duty.
 - Includes a **pipe schedule picker** (DN + Sch 40/80/160 → real ID, ASME B36.10) and an **acceptance tolerance band** (ISO 9906 1B/2B/3B or ANSI-HI 14.6).
 - Offers a full **SI ⇄ US unit toggle**, editable **report metadata**, protected **New case** reset, a **case manager** with rename/duplicate/delete/export/import, **shareable case links**, **side-by-side comparison** with a delta table and curve overlay, and a printable **report sheet**.
 
@@ -66,6 +66,7 @@ scripts/verify-formulas.mjs        First-principles formula verification
 scripts/browser-smoke-test.mjs     Headless Chrome/Edge workflow smoke test
 scripts/build-standalone.mjs       Regenerates the offline standalone file
 docs/verify_formulas_reference.md  LaTeX-style verifier formula reference
+docs/engineering_upgrade_v0.11.0.md Before/after engineering upgrade record
 ```
 
 React + Babel load from CDN at runtime, so the `.jsx` files are transpiled in the browser. The Node scripts are only for smoke testing and refreshing the standalone offline artifact.
@@ -75,15 +76,16 @@ React + Babel load from CDN at runtime, so the `.jsx` files are transpiled in th
 | Quantity | Method / basis |
 |----------|----------------|
 | Pipe friction | Darcy–Weisbach with Churchill friction factor |
-| Minor losses | Fitting count × Crane TP-410 K-values |
+| Minor/equipment losses | Fitting K-values + fixed clean/dirty ΔP + control-valve Kv/Cv |
 | Pump curve | Parametric parabola (shutoff = 1.25 × H_BEP) or monotone interpolation of catalog points |
 | Speed & trim | Affinity laws: Q ∝ N·D, H ∝ (N·D)², P ∝ (N·D)³ |
-| NPSHa | (P_atm + P_suction)/ρg + Zs − Pv/ρg − h_f,suction |
+| NPSHa | (P_atm + P_suction)/ρg + Zs − Pv/ρg − suction pipe/equipment losses |
 | Acceptance | NPSHa / NPSHr ≥ configurable ratio (HI 9.6.1) |
 | Viscosity | HI 9.6.7-style correction factors (C_Q, C_H, C_η) |
 | Specific speed | Metric Ns = N·√Q / H^0.75 |
 | Pipe dimensions | ASME B36.10 (Sch 40 / 80 / 160) |
 | Test tolerance | ISO 9906 (1B/2B/3B) / ANSI-HI 14.6 |
+| Driver sizing | Maximum of duty and AOR absorbed-power envelope × configurable margin |
 
 ## Units & Conventions
 

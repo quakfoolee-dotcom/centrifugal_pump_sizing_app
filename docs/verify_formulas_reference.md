@@ -4,11 +4,11 @@ Source script: `scripts/verify-formulas.mjs`
 
 Command: `npm run verify:formulas`
 
-Expected pass output: `verify-formulas: all 82 first-principles checks passed`
+Expected pass output: `verify-formulas: all 85 first-principles checks passed`
 
 ## Objective
 
-This document translates the 82-check formula verifier into a readable
+This document translates the 85-check formula verifier into a readable
 engineering reference with LaTeX-style equations. The verifier compares app
 outputs against independent references: exact legal unit definitions, a
 Colebrook-White friction reference, published water-property points, hand
@@ -52,11 +52,11 @@ sets a looser value for published correlations or accepted approximation bands.
 | 6 | Power and specific speed | 4 |
 | 7 | Viscosity correction calibration points | 7 |
 | 8 | Parallel and series arrangements | 4 |
-| 9 | Duty solution consistency | 7 |
+| 9 | Duty solution consistency and equipment loss | 10 |
 | 10 | Motor selection and efficiency | 4 |
 | 11 | Pipe schedule vs ASME B36.10 | 4 |
 | 12 | ISO 9906:2012 acceptance grades | 6 |
-|  | Total | 82 |
+|  | Total | 85 |
 
 ## 1. Unit Conversions
 
@@ -623,7 +623,29 @@ $$
 For a 10 percent design flow margin:
 
 $$
-Q_{rated}=1.10Q_{duty}
+Q_{rated}=1.10Q_{required}
+$$
+
+The required flow is independent of the predicted candidate-pump intersection.
+
+### Single Operating Pump
+
+For a duty/standby installation in `single` arrangement:
+
+$$
+n_{operating}=1
+$$
+
+$$
+P_{shaft,total}=P_{shaft,each}
+$$
+
+### Equipment Differential Pressure
+
+At the reference flow, a 10 kPa equipment differential pressure converts to:
+
+$$
+h_{equipment}=\frac{10{,}000}{\rho g}
 $$
 
 ### VFD Speed Solution
@@ -729,7 +751,7 @@ npm run verify:formulas
 Successful output:
 
 ```text
-verify-formulas: all 82 first-principles checks passed
+verify-formulas: all 85 first-principles checks passed
 ```
 
 If a check fails, the script reports the check name, actual value, expected
