@@ -202,7 +202,7 @@ class Cdp {
 async function launchBrowser() {
   const exe = findBrowser();
   const userDataDir = mkdtempSync(path.join(os.tmpdir(), "pumpcalc-browser-profile-"));
-  const browser = spawn(exe, [
+  const browserArgs = [
     "--headless=new",
     "--remote-debugging-port=0",
     "--remote-allow-origins=*",
@@ -214,7 +214,11 @@ async function launchBrowser() {
     "--disable-dev-shm-usage",
     "--window-size=1440,1000",
     "about:blank",
-  ], {
+  ];
+  if (process.platform === "linux") {
+    browserArgs.splice(1, 0, "--no-sandbox", "--disable-setuid-sandbox");
+  }
+  const browser = spawn(exe, browserArgs, {
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
   });
