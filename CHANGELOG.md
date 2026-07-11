@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+- Added a sandboxed Electron desktop shell with native report printing and PDF export.
+- Added Electron Forge packaging for a Windows x64 Squirrel installer and portable ZIP.
+- Added desktop source/artifact verification, runtime dependency auditing, documentation, and Windows CI packaging coverage.
+- Corrected A4 report overflow by constraining report columns, wrapping long engineering values, and scaling the performance chart to the printable area.
+- Added installed-app persistence, JSON, native PDF, A4 overflow, and visual acceptance coverage with a versioned desktop acceptance matrix.
+
 ## [0.11.1] - 2026-07-10
 
 - Added a compact accessible theme popover with Engineering Paper, Control Room Dark, and Blueprint color schemes; persisted the preference independently from case data.

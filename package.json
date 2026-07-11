@@ -1,16 +1,45 @@
 {
   "name": "centrifugal-pump-sizing-app",
+  "productName": "Centrifugal Pump Sizing",
   "version": "0.11.1",
   "description": "Engineer-grade centrifugal pump sizing and screening application.",
+  "author": "quakfoolee-dotcom",
+  "main": "desktop/main.cjs",
   "private": true,
   "license": "UNLICENSED",
+  "engines": {
+    "node": "24.x",
+    "npm": ">=10"
+  },
   "scripts": {
     "test": "node scripts/smoke-test.mjs",
     "test:browser": "node scripts/browser-smoke-test.mjs",
     "verify:formulas": "node scripts/verify-formulas.mjs",
     "build:standalone": "node scripts/build-standalone.mjs",
     "build:site": "node scripts/build-site.mjs",
-    "package:release": "node scripts/package-release.mjs"
+    "package:release": "node scripts/package-release.mjs",
+    "desktop:prepare": "node scripts/build-standalone.mjs && node scripts/build-desktop-icons.mjs",
+    "desktop:start": "npm run desktop:prepare && electron-forge start",
+    "desktop:package": "node scripts/require-node24.mjs && npm run desktop:prepare && npm run desktop:verify && electron-forge package --platform=win32 --arch=x64",
+    "desktop:make": "node scripts/require-node24.mjs && npm run desktop:prepare && npm run desktop:verify && electron-forge make --platform=win32 --arch=x64",
+    "desktop:verify": "node scripts/verify-desktop.mjs",
+    "desktop:verify-artifacts": "node scripts/verify-desktop.mjs --artifacts",
+    "desktop:smoke": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop-smoke-test.ps1",
+    "desktop:acceptance:installed": "node scripts/desktop-installed-acceptance.mjs",
+    "audit:runtime": "npm audit --omit=dev"
   },
-  "devDependencies": {}
+  "config": {
+    "forge": "./forge.config.cjs"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.2",
+    "@electron-forge/maker-squirrel": "^7.11.2",
+    "@electron-forge/maker-zip": "^7.11.2",
+    "electron": "^43.1.0",
+    "png-to-ico": "^3.0.2",
+    "sharp": "^0.35.3"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.1"
+  }
 }
