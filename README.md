@@ -67,6 +67,7 @@ scripts/browser-smoke-test.mjs     Headless Chrome/Edge workflow smoke test
 scripts/build-standalone.mjs       Regenerates the offline standalone file
 docs/verify_formulas_reference.md  LaTeX-style verifier formula reference
 docs/engineering_upgrade_v0.11.0.md Before/after engineering upgrade record
+docs/major_upgrades_delivered_v0.11.0.md Detailed upgrade changes and results
 ```
 
 React + Babel load from CDN at runtime, so the `.jsx` files are transpiled in the browser. The Node scripts are only for smoke testing and refreshing the standalone offline artifact.
