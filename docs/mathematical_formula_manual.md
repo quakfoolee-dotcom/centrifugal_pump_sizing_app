@@ -1108,11 +1108,11 @@ achievable.
 For the current default case used in QC:
 
 ```math
-Q_{duty} \approx 162.752 \ \text{m}^3\text{/h}
+Q_{duty} \approx 149.606 \ \text{m}^3\text{/h}
 ```
 
 ```math
-H_{duty} \approx 25.284 \ \mathrm{m}
+H_{duty} \approx 27.566 \ \mathrm{m}
 ```
 
 At this point:
@@ -1630,31 +1630,31 @@ H_{duty} \approx 25.284 \ \mathrm{m}
 ```
 
 ```math
-\eta_{duty} \approx 0.691
+\eta_{duty} \approx 0.737
 ```
 
 ### NPSH
 
 ```math
-NPSHa \approx 11.351 \ \mathrm{m}
+NPSHa \approx 10.314 \ \mathrm{m}
 ```
 
 ```math
-NPSHr \approx 4.409 \ \mathrm{m}
+NPSHr \approx 3.998 \ \mathrm{m}
 ```
 
 ```math
-M_{NPSH} \approx 6.942 \ \mathrm{m}
+M_{NPSH} \approx 6.316 \ \mathrm{m}
 ```
 
 ```math
-R_{NPSH} \approx 2.575
+R_{NPSH} \approx 2.580
 ```
 
 ### VFD
 
 ```math
-N_{target} \approx 2474.8 \ \mathrm{rpm}
+N_{target} \approx 2553.7 \ \mathrm{rpm}
 ```
 
 ```math
@@ -1675,3 +1675,124 @@ N_{min,VFD} \approx 1978.9 \ \mathrm{rpm}
 - Series operation assumes ideal head addition and no interstage loss.
 - Acceptance tolerance bands are visual screening aids and should be checked
   against the applicable test standard and purchase specification.
+
+## 40. Independent Required and Rated Duty
+
+The required point is a process input and is not replaced by the predicted
+pump/system intersection:
+
+```math
+Q_{rated}=Q_{required}\left(1+\frac{M_Q}{100}\right)
+```
+
+```math
+H_{rated}=H_{required}\left(1+\frac{M_H}{100}\right)
+```
+
+`H_required` may be entered manually or evaluated from the system curve at
+`Q_required`. The predicted operating point remains the numerical intersection
+of the candidate pump and system curves.
+
+## 41. Operating and Installed Pump Counts
+
+`n_operating` is used for combined pump curves, shaft power, input power, and
+energy. `n_installed` is a reporting/reliability value only:
+
+```math
+P_{shaft,total}=n_{operating}P_{shaft,each}
+```
+
+For a single duty pump with one standby, `n_operating=1` and
+`n_installed=2`; standby capacity does not double annual energy.
+
+## 42. Equipment Differential-Pressure Loss
+
+For fixed equipment or filters with a reference differential pressure:
+
+```math
+\Delta P(Q)=\Delta P_{ref}\left(\frac{Q}{Q_{ref}}\right)^2
+```
+
+```math
+h_{equipment}=\frac{\Delta P(Q)}{\rho g}
+```
+
+Clean and dirty reference differential pressures are stored independently.
+
+For a metric valve coefficient `Kv`:
+
+```math
+h_{Kv}=\left(\frac{Q}{K_v}\right)^2\frac{10^5}{1000g}
+```
+
+where `Q` and `Kv` are in m³/h. A supplied US `Cv` is converted using:
+
+```math
+K_v=0.865C_v
+```
+
+Suction-side equipment loss is included in system head and subtracted from
+NPSHa; discharge-side loss is included in system head only.
+
+For equipment installed in each identical parallel branch, the row flow is
+`Q_total / n_operating`. System-total equipment uses `Q_total`.
+
+## 43. Best, Normal, and Worst Hydraulic Scenarios
+
+The scenario systems use:
+
+- best hydraulic case: maximum suction level, minimum discharge level, clean equipment;
+- normal case: current normal levels and selected equipment condition;
+- worst hydraulic case: minimum suction level, maximum discharge level, dirty equipment.
+
+Each scenario is solved independently against the same effective pump curve.
+Parallel configurations also solve each operating count from one pump through
+all pumps so the one-unavailable and all-running intersections are explicit.
+
+An optional branch imbalance factor is applied conservatively to per-pump
+NPSHr and driver loading:
+
+```math
+Q_{branch,worst}=\frac{Q_{total}}{n_{operating}}\left(1+\frac{I_Q}{100}\right)
+```
+
+## 44. Worst-Case Rated NPSH
+
+The worst NPSH screen is evaluated at rated flow using minimum suction level,
+minimum atmospheric pressure, maximum scenario vapor pressure, maximum density,
+and dirty suction equipment:
+
+```math
+NPSHa_{worst}=\frac{P_{atm,min}+P_s}{\rho_{max}g}+Z_{s,min}
+-\frac{P_{vap,max}}{\rho_{max}g}-h_{f,s}-h_{equipment,s,dirty}
+```
+
+Ratio and absolute margin are separate pass/fail criteria.
+
+## 45. Motor Absorbed-Power Envelope
+
+The app samples the configured AOR from `Q_AOR,min` to `Q_AOR,max`. At every
+sample it evaluates per-pump head, efficiency, flow, and brake power using the
+maximum scenario density. The driver basis is:
+
+```math
+P_{basis}=\max(P_{duty},\max_{Q\in AOR}P_{brake}(Q,\rho_{max}))
+```
+
+```math
+P_{required}=P_{basis}\left(1+\frac{M_{motor}}{100}\right)
+```
+
+The next standard IEC and NEMA sizes are reported.
+
+## 46. Validation and Applicability
+
+The calculation is blocked for non-positive density, viscosity, pipe diameter,
+pump BEP data, speed, or impeller diameter; negative pipe length/roughness;
+invalid required duty; invalid catalog flow/head/NPSHr; catalog efficiency
+outside 5–95%; or suction absolute pressure at/below vapor pressure.
+
+Warnings identify fluid temperatures outside the screening correlation range,
+possible freezing, high viscosity, catalog extrapolation, and operation outside
+the configured POR/AOR. These checks improve screening quality but do not
+replace vendor-certified curves or the project purchase specification.

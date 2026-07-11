@@ -53,7 +53,7 @@ so it does not depend on CDN access during the test.
 ```text
 smoke-test: duty solve, parallel case, and pipe helpers passed
 browser-smoke-test: flags, panel layout, accessible tabs, chart hover, new case, case manager, share link, metadata, case import/export, numeric inputs, units, and report print title passed
-verify-formulas: all 82 first-principles checks passed
+verify-formulas: all 85 first-principles checks passed
 ```
 
 Any thrown error means the smoke test failed. The error message names the
@@ -66,15 +66,18 @@ calculation or workflow assertion that failed.
 | Units | SI to US and US to SI flow conversion, temperature conversion, and specific-energy conversion. |
 | Formula verification | Independent checks against exact unit definitions, Colebrook-White friction reference, published water-property data, hydraulic identities, affinity laws, catalog interpolation, motor sizing, pipe schedule dimensions, and ISO tolerance constants. |
 | Pipe hydraulics | Pipe velocity, Reynolds number, laminar/low-Re friction factor, transitional friction sanity, flow-regime labels, and hydraulic/brake power. |
-| System head | Static lift, vessel pressure head, zero-flow system head, and zero-flow NPSHa. |
+| System head | Static lift, vessel pressure head, zero-flow system head/NPSHa, separate roughness, fixed equipment ΔP, clean/dirty loss, and Kv conversion. |
 | Pump curve | Parametric shutoff/BEP head, BEP efficiency, NPSHr, affinity scaling, and catalog shutoff handling. |
 | Catalog QC | Head-only auxiliary-curve flags, non-monotone head flattening, high-flow head behavior, efficiency high-flow behavior, duty/rated/selected catalog extrapolation flags. |
 | Viscosity | BEP flow correction, efficiency correction, conservative NPSHr increase, flow-ratio sensitivity, specific-speed sensitivity, and mineral-acid fluid-property branch. |
 | VFD | Selected-flow speed-for-duty solve, target-head verification, rich out-of-range status, minimum static speed status, and no-duty underspeed case. |
 | No-duty behavior | Positive-flow pump/system mismatch flag, zero duty flow, no positive brake power, and no motor selection for no-duty cases. |
-| Multi-pump arrangements | Parallel flow increase and per-pump split, series head addition, and solved-duty consistency. |
-| NPSH acceptance | Configurable absolute NPSH margin effect and default margin value. |
-| Motor sizing | Next IEC/NEMA motor selection, zero-duty motor behavior, and size-based motor efficiency trend. |
+| Multi-pump arrangements | Parallel flow increase and per-pump split, series head addition, solved-duty consistency, single duty/standby power, all/one-unavailable staging, branch-flow equipment basis, and conservative flow-imbalance loading. |
+| Required duty | Rated duty remains tied to the independent process requirement when the candidate pump curve changes. |
+| NPSH acceptance | Independent ratio/absolute-margin status, configurable absolute margin, default margin, and worst-case scenario evaluation. |
+| Motor sizing | Next IEC/NEMA selection, zero-duty behavior, size-based efficiency, and maximum duty/AOR power basis. |
+| Input validation | Invalid hydraulic dimensions and catalog efficiency values block calculation with specific errors. |
+| Equipment losses | Fixed clean/dirty differential pressure and control-valve Kv identities. |
 | Fluid property flags | Estimated non-water preset flag and mineral-acid handling for sulfuric acid-style fluids. |
 | Case workflow | Current-state case export, share-link hash round trip, valid single-case import, case-library import without active-state replacement, invalid library rejection, case-manager rename/duplicate/delete, and dirty-load snapshot protection. |
 | Chart UX wiring | Explicit NPSH tick scale, target-flow label, solved-duty label, and pointer-event drag wiring. |
@@ -112,6 +115,9 @@ calculation or workflow assertion that failed.
 - Vendor-grade hydraulic validation against certified pump curves, HI charts, or
   project specifications. The formula verifier checks many identities and
   published reference values, but it is still not a certified pump selection.
+- Unequal parallel-branch flow distribution and transient interaction. Model
+  materially unequal branches in a hydraulic-network solver or as separate
+  conservative cases.
 
 ## Related Commands
 

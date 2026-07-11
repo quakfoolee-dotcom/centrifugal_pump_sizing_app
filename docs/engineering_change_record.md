@@ -25,6 +25,60 @@ These items were identified during engineering review and are not fully closed:
 
 ## Change Records
 
+### 0.11.0 - Engineering Correctness And Operating Envelopes
+
+**Objective**
+
+Execute the pump-engineering improvement list covering operating/standby pump
+semantics, independent design duty, validation, catalog units, equipment
+losses, operating scenarios, NPSH, driver sizing, operating limits, reporting,
+and regression verification.
+
+**Before Fix**
+
+- A `single` hydraulic arrangement could retain two pumps in state and double
+  total shaft power, annual energy, and cost.
+- Rated duty was derived from the selected pump/system intersection.
+- Catalog inputs stayed in SI under the US view and efficiency was fractional.
+- Motor sizing used only duty-point power, and NPSH used the normal case only.
+- Pipe roughness was shared and equipment ΔP/Kv/Cv was not modeled.
+
+**After Fix**
+
+- Operating and installed/standby counts are separate; only operating pumps
+  contribute to power and energy.
+- Required and rated duty are process inputs independent of the candidate pump.
+- Added blocking validation, active-unit catalog entry, percent efficiency,
+  configurable POR/AOR/MCSF/thermal/Nss limits, motor AOR envelope sizing,
+  min/normal/max level scenarios, worst-case rated NPSH, separate roughness,
+  fixed/clean/dirty ΔP, and Kv/Cv equipment losses.
+- Expanded the calculator and printable report and added an explicit
+  screening/duty-checking applicability statement.
+
+**Files Changed**
+
+Calculation engine, duty derivation, calculator, chart, report, initial state,
+case migration, smoke/formula/browser tests, standalone build, README,
+changelog, formula reference/manual, smoke matrix, and the dedicated
+`engineering_upgrade_v0.11.0.md` before/after record.
+
+**QC Results**
+
+- Calculation smoke suite: pass.
+- Formula verification: 85/85 pass (previously 82/82).
+- Standalone build: pass and idempotent.
+- Headless rendered-browser workflow: pass.
+
+**Remaining Risk**
+
+Parallel branches remain an ideal equal-flow model; viscosity and generic
+non-water properties remain screening correlations; vendor-certified curves
+and purchase-specification review remain mandatory for final selection.
+
+**Release / Commit**
+
+Release version `0.11.0`; commit recorded in Git history.
+
 ### 0.10.26 - Accessibility And Report PDF Filename
 
 **Objective**

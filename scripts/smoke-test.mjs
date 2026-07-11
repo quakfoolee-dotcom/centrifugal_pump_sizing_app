@@ -40,7 +40,7 @@ const baseState = {
     Zs: 1.5, Zd: 19.5, Ps_kPa: 0, Pd_kPa: 0,
     Ds: 154.1, Ls: 8,
     Dd: 128.2, Ld: 85,
-    eps: 0.046,
+    eps: 0.046, epsS: 0.046, epsD: 0.046, equipment: [], equipmentCondition: "clean",
     fitS: [
       { type: "entrance_sharp", qty: 1 },
       { type: "elbow90_lr", qty: 2 },
@@ -68,17 +68,20 @@ const baseState = {
     ],
     npshRatio: 1.3,
     minFlowPct: 45,
+    porMinPct: 70, porMaxPct: 120, aorMinPct: 50, aorMaxPct: 130,
+    installedPumps: 2, motorMarginPct: 15,
     arrangement: "single",
     nPumps: 2,
     showSpeedFamily: false,
   },
-  design: { flowMargin: 10, headMargin: 0 },
+  design: { requiredQ: 110, headMode: "system", flowMargin: 10, headMargin: 0 },
+  scenario: { ZsMin: 0.5, ZsMax: 2.5, ZdMin: 18.5, ZdMax: 20.5, PatmMin_kPa: 95, PvapMax_kPa: 7.38, rhoMax: 1000 },
   econ: { hours: 8000, price: 0.12 },
   unitSystem: "SI",
   op: { Q: 110 },
 };
 
-assert(PumpCases.APP_VERSION === "0.10.26", "app version helper should match this release");
+assert(PumpCases.APP_VERSION === "0.11.0", "app version helper should match this release");
 const editedState = {
   ...baseState,
   meta: { ...baseState.meta, tag: "LIVE-EDIT", docNo: "" },
@@ -171,6 +174,11 @@ assert(calculatorJsx.includes("parseFieldDisplay") && calculatorJsx.includes("in
 assert(calculatorJsx.includes("criticalFlags") && calculatorJsx.includes("cautionFlags") && calculatorJsx.includes("assumptionFlags"), "calculator should classify calculation flags by severity");
 assert(calculatorJsx.includes("data-flag-tier=\"critical\"") && calculatorJsx.includes("data-flag-tier=\"assumption\""), "calculator should render severity-tiered flag groups");
 assert(calculatorJsx.includes("Remove fitting row") && calculatorJsx.includes("Remove catalog point"), "icon-only calculator delete buttons should have accessible labels");
+assert(calculatorJsx.includes('Q {U.unit("flow")}') && calculatorJsx.includes('η %'), "catalog editor should follow active units and display efficiency as percent");
+assert(calculatorJsx.includes("Installed pumps") && calculatorJsx.includes("Operating pumps"), "calculator should distinguish installed and operating pump counts");
+assert(calculatorJsx.includes("EquipmentTable") && calculatorJsx.includes("Valve Kv/Cv"), "calculator should support equipment and control-valve losses");
+assert(calculatorJsx.includes("Worst-case rated NPSH") && calculatorJsx.includes("Operating scenarios"), "calculator should expose worst-case scenario checks");
+assert(calculatorJsx.includes("Required duty") && calculatorJsx.includes("independent target"), "calculator should separate required duty from predicted operation");
 const compareJsx = readFileSync("components/Compare.jsx", "utf8");
 assert(compareJsx.includes("Remove comparison slot"), "icon-only compare delete button should have an accessible label");
 
@@ -332,18 +340,43 @@ assert(duty.hasDutyPoint && !duty.noDutyPoint, "default case should report a val
 assert(duty.Qmax > duty.dutyQ, "plot range should cover the duty point");
 assertNear(duty.opH, duty.TDH, 0.05, "default pump head should match system TDH at duty");
 assert(Number.isFinite(duty.Pbrake) && duty.Pbrake > 0, "brake power should be finite and positive");
+assertNear(duty.Pbrake, duty.PbrakePer, 1e-12, "single arrangement must not multiply power by stored pump count");
+assert(duty.nSet === 1 && duty.installedPumps === 2, "single duty/standby case should distinguish operating and installed pumps");
 assert(Number.isFinite(duty.Ns) && duty.Ns > 0, "specific speed should be finite and positive");
 assert(Math.abs(PM.combinedH(duty.selectedQ, duty.effPump) - duty.selectedHsys) > 0.5, "selected target flow should differ from current pump curve for VFD test fixture");
 assert(duty.speedForDutyStatus === "solved", "default VFD target should solve within speed bounds");
 assertNear(PM.combinedH(duty.selectedQ, { ...duty.effPump, N: duty.speedForDuty }), duty.selectedHsys, 0.05, "VFD speed should solve at selected target flow");
 assert(duty.curveEstimated, "parametric pump curve should be flagged as estimated");
 assert(duty.minorLossesApprox, "default fitting K-values should be flagged as approximate");
-assert(duty.motor.selected_kW >= duty.PbrakePer * 1.15, "selected IEC motor should cover per-pump brake power plus margin");
+assert(duty.motorBasisPer >= duty.PbrakePer && duty.motorBasisPer >= duty.maxBhpPer, "motor sizing basis should cover duty and AOR envelope power");
+assert(duty.motor.selected_kW >= duty.motorBasisPer * 1.15, "selected IEC motor should cover maximum envelope power plus margin");
 assertNear(duty.motorEff, PM.motorEfficiency(duty.motor.selected_kW), 1e-12, "duty motor efficiency should come from selected motor size");
 assertNear(duty.npshMarginAbs, 0.6, 1e-12, "default absolute NPSH margin should be 0.6 m");
 
 const strictNpshDuty = computeDuty({ ...baseState, pump: { ...baseState.pump, npshMarginAbs: 50 } });
 assert(!strictNpshDuty.cavOk, "configurable absolute NPSH margin should affect cavitation status");
+assert(strictNpshDuty.npshRatioOk && !strictNpshDuty.npshAbsOk, "ratio and absolute NPSH failures should be reported independently");
+
+assertNear(duty.ratedQ, 121, 1e-12, "rated flow should derive from independent required duty, not predicted intersection");
+const changedPumpDuty = computeDuty({ ...baseState, pump: { ...baseState.pump, Hb: 45 } });
+assertNear(changedPumpDuty.ratedQ, duty.ratedQ, 1e-12, "changing the candidate pump must not change required rated flow");
+
+const equipmentSystem = {
+  ...baseState.sys, Ls: 0, Ld: 0, fitS: [], fitD: [], Ks: 0, Kd: 0,
+  equipment: [{ type: "fixed_dp", side: "discharge", qRef: 100, dpClean_kPa: 10, dpDirty_kPa: 25 }],
+};
+assertNear(PM.equipmentHead(100, equipmentSystem, "discharge", "clean"), 10000 / (998 * PM.g), 1e-9, "clean equipment differential pressure should convert to head");
+assert(PM.equipmentHead(100, equipmentSystem, "discharge", "dirty") > PM.equipmentHead(100, equipmentSystem, "discharge", "clean"), "dirty equipment loss should exceed clean loss");
+const valveSystem = { ...equipmentSystem, equipment: [{ type: "control_kv", side: "discharge", kv: 100 }] };
+assertNear(PM.equipmentHead(100, valveSystem, "discharge"), 1e5 / (1000 * PM.g), 1e-9, "Kv=Q should produce one bar water loss");
+const branchValveSystem = { ...valveSystem, arrangement: "parallel", operatingPumps: 2, equipment: [{ type: "control_kv", side: "discharge", kv: 50, flowBasis: "per_pump" }] };
+assertNear(PM.equipmentHead(100, branchValveSystem, "discharge"), 1e5 / (1000 * PM.g), 1e-9, "per-branch Kv should use per-pump parallel flow");
+
+const invalidDuty = computeDuty({ ...baseState, sys: { ...baseState.sys, Ds: 0 } });
+assert(!invalidDuty.inputValid && invalidDuty.validationErrors.some(x => x.includes("Suction inside diameter")), "invalid hydraulic inputs should block calculation with a specific error");
+const invalidCatalogDuty = computeDuty({ ...baseState, pump: { ...baseState.pump, useCatalog: true, catalog: [{ q: 0, h: 40, eta: 0 }, { q: 100, h: 30, eta: 78 }] } });
+assert(!invalidCatalogDuty.inputValid && invalidCatalogDuty.validationErrors.some(x => x.includes("efficiency")), "catalog efficiency entered outside 5-95% should be rejected");
+assert(duty.scenarioResults.length === 3 && Number.isFinite(duty.worstNPSHa), "operating and worst-case NPSH scenarios should be evaluated");
 
 const tooHighVfd = PM.speedForDutyResult(referencePump, 300, 200);
 assert(tooHighVfd.status === "above-max", "unreachable high-head VFD target should report above max speed");
@@ -364,7 +397,7 @@ assertNear(noDuty.motor.selected_kW, 0, 1e-12, "no-duty case should not select a
 
 const parallelState = {
   ...baseState,
-  pump: { ...baseState.pump, arrangement: "parallel", nPumps: 3 },
+  pump: { ...baseState.pump, arrangement: "parallel", nPumps: 3, installedPumps: 3 },
   op: { Q: 260 },
 };
 const parallelDuty = computeDuty(parallelState);
@@ -372,6 +405,9 @@ assert(parallelDuty.dutyQ > duty.dutyQ, "parallel pumps should increase solved f
 assert(parallelDuty.perQ < parallelDuty.dutyQ, "parallel per-pump flow should be below total flow");
 assert(parallelDuty.Qmax >= parallelDuty.dutyQ, "parallel plot range should cover duty flow");
 assertNear(parallelDuty.opH, parallelDuty.TDH, 0.05, "parallel pump head should match system TDH at duty");
+assert(parallelDuty.stagingResults.length === 3 && parallelDuty.stagingResults.some(x => x.label === "One unavailable"), "parallel staging should include all-running and one-unavailable cases");
+const imbalancedParallel = computeDuty({ ...parallelState, pump: { ...parallelState.pump, parallelImbalancePct: 10 } });
+assert(imbalancedParallel.worstBranchQ > imbalancedParallel.perQ && imbalancedParallel.opNPSHr >= parallelDuty.opNPSHr, "parallel imbalance should increase worst-branch flow and NPSHr screening");
 
 const seriesDuty = computeDuty({ ...baseState, pump: { ...baseState.pump, arrangement: "series", nPumps: 2 } });
 assert(seriesDuty.dutyQ > duty.dutyQ, "series pumps should increase solved flow for the same system");
