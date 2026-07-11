@@ -15,3 +15,4 @@ npm-debug.log*
 
 # Local build scratch
 screenshots/
+dist/

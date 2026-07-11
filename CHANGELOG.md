@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.1] - 2026-07-10
+
+- Added a compact accessible theme popover with Engineering Paper, Control Room Dark, and Blueprint color schemes; persisted the preference independently from case data.
+- Reworked the right toolbar into stable display, case, and action zones with a fixed-width non-wrapping Print Report / PDF control.
+- Moved case notifications into a dismissible five-second toast so loading or snapshot messages cannot resize toolbar controls.
+- Added case-name truncation/tooltips, responsive toolbar rules, theme-safe focus colors, and a print/report Paper palette independent of the selected interface theme.
+- Added source and rendered-browser regression coverage, bumped the app version to `0.11.1`, and regenerated the standalone app.
+- Added release metadata, proprietary-use notice, versioned release notes, reproducible checksum packaging, CI verification, and GitHub Pages deployment automation.
+
 ## [0.11.0] - 2026-07-10
 
 - Corrected single-duty/standby power and energy by separating installed pumps from simultaneously operating pumps; added parallel all-running/one-unavailable staging, per-branch equipment flow, and conservative branch-imbalance loading.

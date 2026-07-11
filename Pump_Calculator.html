@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <title>Centrifugal Pump · Calculator</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="styles.css?v=0.11.1" />
 </head>
 <body>
 
@@ -165,12 +165,24 @@ function buildPrintTitle(meta = {}) {
   return [docNo, rev ? `Rev ${rev}` : "", tag, project].filter(Boolean).join(" - ");
 }
 
+const INTERFACE_THEMES = [
+  { key: "paper", label: "Engineering Paper", short: "Paper" },
+  { key: "dark", label: "Control Room Dark", short: "Dark" },
+  { key: "blueprint", label: "Blueprint", short: "Blueprint" },
+];
+
 function App() {
   const [state, setState] = useState(initialState);
   const baselineRef = useRef(serializeCaseState(initialState));
   const skipInitialAutosaveRef = useRef(true);
   const [view, setView] = useState("calc");        // calc | report | compare
   const [density, setDensity] = useState(TWEAK_DEFAULTS.density);
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = localStorage.getItem("pumpcalc:theme");
+      return INTERFACE_THEMES.some(item => item.key === saved) ? saved : "paper";
+    } catch { return "paper"; }
+  });
   const [tweaksOn, setTweaksOn] = useState(false);
   const importRef = useRef(null);
   const [caseNotice, setCaseNotice] = useState("");
@@ -179,8 +191,19 @@ function App() {
   const [managerDraftName, setManagerDraftName] = useState("");
   const caseManagerPanelRef = useRef(null);
   const restorePrintTitleRef = useRef(null);
+  const themeMenuRef = useRef(null);
 
   useEffect(() => { document.documentElement.dataset.density = density; document.body.dataset.density = density; }, [density]);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.body.dataset.theme = theme;
+    try { localStorage.setItem("pumpcalc:theme", theme); } catch {}
+  }, [theme]);
+  useEffect(() => {
+    if (!caseNotice) return undefined;
+    const timer = window.setTimeout(() => setCaseNotice(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [caseNotice]);
 
   useEffect(() => {
     try {
@@ -456,6 +479,11 @@ function App() {
   };
 
   const caseNames = Object.keys(cases);
+  const activeTheme = INTERFACE_THEMES.find(item => item.key === theme) || INTERFACE_THEMES[0];
+  const chooseTheme = (nextTheme) => {
+    setTheme(nextTheme);
+    if (themeMenuRef.current) themeMenuRef.current.open = false;
+  };
   const selectedManagedCase = managerSelection ? cases[managerSelection] : null;
   const viewTabs = [
     { key: "calc", num: "01", label: "Calculator", panelId: "panel-calc" },
@@ -506,20 +534,48 @@ function App() {
           ))}
         </div>
         <div className="topbar-right">
-          <div className="seg unit-seg">
-            <button className={(state.unitSystem || "SI") === "SI" ? "on" : ""}
-                    onClick={() => setState(s => ({ ...s, unitSystem: "SI" }))}>SI</button>
-            <button className={state.unitSystem === "US" ? "on" : ""}
-                    onClick={() => setState(s => ({ ...s, unitSystem: "US" }))}>US</button>
+          <div className="display-tools" aria-label="Display settings">
+            <div className="seg unit-seg" aria-label="Unit system">
+              <button className={(state.unitSystem || "SI") === "SI" ? "on" : ""}
+                      onClick={() => setState(s => ({ ...s, unitSystem: "SI" }))}>SI</button>
+              <button className={state.unitSystem === "US" ? "on" : ""}
+                      onClick={() => setState(s => ({ ...s, unitSystem: "US" }))}>US</button>
+            </div>
+            <details ref={themeMenuRef}
+                     className="theme-picker"
+                     onKeyDown={e => { if (e.key === "Escape") { e.currentTarget.open = false; e.currentTarget.querySelector("summary")?.focus(); } }}>
+              <summary className="theme-trigger"
+                       aria-label={`Change interface theme. Current theme: ${activeTheme.label}`}
+                       title={`Theme: ${activeTheme.label}`}>
+                <span className={`theme-trigger-swatch ${theme}`} aria-hidden="true" />
+                <span className="sr-only">Change interface theme</span>
+              </summary>
+              <div className="theme-menu" role="menu" aria-label="Interface color theme">
+                {INTERFACE_THEMES.map(item => (
+                  <button key={item.key}
+                          type="button"
+                          role="menuitemradio"
+                          aria-checked={theme === item.key}
+                          className={"theme-option" + (theme === item.key ? " active" : "")}
+                          onClick={() => chooseTheme(item.key)}>
+                    <span className={`theme-option-swatch ${item.key}`} aria-hidden="true" />
+                    <span>{item.label}</span>
+                    {theme === item.key && <span className="theme-check" aria-hidden="true">✓</span>}
+                  </button>
+                ))}
+              </div>
+            </details>
           </div>
           <div className="cases">
             <span className="tiny" style={{marginRight:2}}>Cases</span>
             <select className="case-sel" value={cases[caseName] ? caseName : ""}
+                    title={cases[caseName] ? caseName : "Load saved case"}
                     onChange={e => e.target.value && loadCase(e.target.value)}>
               <option value="">Load…</option>
               {caseNames.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
             <input className="case-name" placeholder="name" value={caseName}
+                   title={caseName || "Case name"}
                    onChange={e => setCaseName(e.target.value)} />
             <button className="btn" onClick={newCase} title="start a blank calculation case">New</button>
             <button className="btn" onClick={saveCase}>Save</button>
@@ -527,12 +583,20 @@ function App() {
             <button className="btn" onClick={openCaseManager} title="manage saved cases">Manage</button>
             <button className="btn" onClick={copyShareLink} title="copy a link to this exact case">Share</button>
             <input ref={importRef} type="file" accept="application/json,.json" onChange={importCaseFile} style={{display:"none"}} />
-            {caseNotice && <span className="case-notice" title={caseNotice}>{caseNotice}</span>}
           </div>
-          <span><span className="dot" />autosave</span>
-          <button className="btn" onClick={printReport} title="switch to report preview and print the report sheet">Print Report / PDF</button>
+          <div className="topbar-actions">
+            <span className="autosave-state"><span className="dot" />autosave</span>
+            <button className="btn print-report" onClick={printReport} title="switch to report preview and print the report sheet">Print Report / PDF</button>
+          </div>
         </div>
       </div>
+
+      {caseNotice && (
+        <div className="case-toast" role="status" aria-live="polite">
+          <span title={caseNotice}>{caseNotice}</span>
+          <button type="button" onClick={() => setCaseNotice("")} aria-label="Dismiss notification">×</button>
+        </div>
+      )}
 
       {caseManagerOpen && (
         <div className="case-manager-backdrop" role="presentation" onClick={(e) => e.target === e.currentTarget && setCaseManagerOpen(false)}>

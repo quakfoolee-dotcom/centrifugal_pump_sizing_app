@@ -2,6 +2,11 @@
 
 Static, engineer-grade centrifugal pump sizing calculator built as a single-page browser app. Open `index.html` or `Pump_Calculator.html` for the multi-file app, or `Pump_Calculator_standalone.html` for the single self-contained offline file.
 
+Current stable release: **v0.11.1**. Release packages and checksums are published
+through [GitHub Releases](https://github.com/quakfoolee-dotcom/centrifugal_pump_sizing_app/releases),
+and the hosted application is deployed through
+[GitHub Pages](https://quakfoolee-dotcom.github.io/centrifugal_pump_sizing_app/).
+
 ## What It Does
 
 - Computes the **system curve** and finds the **duty point** where the pump and system curves intersect — live, as you edit.
@@ -17,6 +22,7 @@ Static, engineer-grade centrifugal pump sizing calculator built as a single-page
 - Sizes the **motor from the maximum absorbed-power envelope** across the AOR at maximum scenario density, then reports annual energy, cost, and specific energy at predicted duty.
 - Includes a **pipe schedule picker** (DN + Sch 40/80/160 → real ID, ASME B36.10) and an **acceptance tolerance band** (ISO 9906 1B/2B/3B or ANSI-HI 14.6).
 - Offers a full **SI ⇄ US unit toggle**, editable **report metadata**, protected **New case** reset, a **case manager** with rename/duplicate/delete/export/import, **shareable case links**, **side-by-side comparison** with a delta table and curve overlay, and a printable **report sheet**.
+- Provides persistent **Engineering Paper**, **Control Room Dark**, and **Blueprint** interface themes from a compact accessible toolbar control while keeping printed reports on the Paper palette.
 
 ## Run Locally
 
@@ -36,6 +42,8 @@ npm run test
 npm run build:standalone
 npm run test:browser
 npm run verify:formulas
+npm run package:release
+npm run build:site
 ```
 
 `verify:formulas` checks the calculation engine against first-principles
@@ -65,8 +73,13 @@ scripts/smoke-test.mjs             No-dependency calculation smoke test
 scripts/verify-formulas.mjs        First-principles formula verification
 scripts/browser-smoke-test.mjs     Headless Chrome/Edge workflow smoke test
 scripts/build-standalone.mjs       Regenerates the offline standalone file
+scripts/package-release.mjs        Builds versioned release files and SHA-256 sums
+scripts/build-site.mjs             Stages the minimal GitHub Pages artifact
+release-manifest.json              Release version, entrypoint, and support metadata
+docs/releases/v0.11.1.md           Versioned release notes
 docs/verify_formulas_reference.md  LaTeX-style verifier formula reference
 docs/engineering_upgrade_v0.11.0.md Before/after engineering upgrade record
+docs/major_upgrades_delivered_v0.11.0.md Detailed upgrade changes and results
 ```
 
 React + Babel load from CDN at runtime, so the `.jsx` files are transpiled in the browser. The Node scripts are only for smoke testing and refreshing the standalone offline artifact.
@@ -94,3 +107,10 @@ All physics is computed in **SI internally** (m³/h, m, kW, kPa, mm, °C). The U
 ## Disclaimer
 
 This is an engineering screening tool. Approximations — notably viscosity above ~300 cP — and any final guarantee point should be confirmed against vendor pump curves and the governing project standards before procurement.
+
+## License
+
+Copyright (c) 2026 quakfoolee-dotcom. All rights reserved. This repository is
+published for controlled distribution and review; no permission to copy,
+modify, or redistribute is granted without written authorization. See
+`LICENSE` and `NOTICE.md`.
