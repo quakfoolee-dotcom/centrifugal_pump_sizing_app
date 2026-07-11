@@ -166,6 +166,8 @@ assert(appCss.includes(".tab:focus-visible") && appCss.includes(".cat-del:focus-
 assert(appCss.includes('html[data-theme="dark"]') && appCss.includes('html[data-theme="blueprint"]'), "dark and blueprint theme variable palettes should be defined");
 assert(appCss.includes(".print-report") && appCss.includes("white-space: nowrap") && appCss.includes("min-width: 125px"), "print control should have a fixed non-wrapping toolbar footprint");
 assert(appCss.includes(".case-toast") && appCss.includes("position: fixed"), "case notification toast should not participate in toolbar sizing");
+const browserSmoke = readFileSync("scripts/browser-smoke-test.mjs", "utf8");
+assert(browserSmoke.includes('process.platform === "linux"') && browserSmoke.includes('"--no-sandbox"'), "browser smoke test should support sandbox-restricted Linux CI runners");
 const standaloneHtml = readFileSync("Pump_Calculator_standalone.html", "utf8");
 const standaloneHeaderCount = (standaloneHtml.match(/Centrifugal Pump Calculator/g) || []).length;
 assert(standaloneHeaderCount <= 1, "standalone build should not accumulate duplicate app CSS header comments");
