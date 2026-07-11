@@ -52,7 +52,7 @@ and the resulting installed payload matched source byte-for-byte.
 | DA-21 | Engineering regression | First-principles calculation checks remain unchanged | PASS | All 85 formula checks passed. |
 | DA-22 | Browser parity | Desktop payload remains behaviorally compatible with the browser edition | PASS | Browser smoke suite passed; installed standalone is byte-identical to the generated browser standalone. |
 | DA-23 | Runtime security | Shipped production dependencies have no reported npm audit findings | PASS | `npm audit --omit=dev` returned 0 vulnerabilities. |
-| DA-24 | CI packaging | Windows CI builds, smokes, verifies, and uploads desktop artifacts | PENDING | Windows desktop job added to `.github/workflows/ci.yml`; the first remote run will execute after push. |
+| DA-24 | CI packaging | Windows CI builds, smokes, verifies, and uploads desktop artifacts | PASS | GitHub Actions run `29169217893` passed both `verify` and `desktop`, including Windows artifact upload. |
 
 ## PDF defect correction
 
