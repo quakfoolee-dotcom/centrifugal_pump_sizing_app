@@ -81,7 +81,7 @@ const baseState = {
   op: { Q: 110 },
 };
 
-assert(PumpCases.APP_VERSION === "0.11.0", "app version helper should match this release");
+assert(PumpCases.APP_VERSION === "0.11.1", "app version helper should match this release");
 const editedState = {
   ...baseState,
   meta: { ...baseState.meta, tag: "LIVE-EDIT", docNo: "" },
@@ -150,6 +150,9 @@ assert(appHtml.includes('role="tablist"') && appHtml.includes('role="tab"') && a
 assert(appHtml.includes("onTabKeyDown") && appHtml.includes("ArrowRight") && appHtml.includes("aria-controls={tab.panelId}"), "main tabs should support keyboard navigation");
 assert(appHtml.includes("buildPrintTitle") && appHtml.includes("document.title = nextTitle") && appHtml.includes("afterprint"), "report print should set a project-specific PDF title and restore it after print");
 assert(appHtml.includes("caseManagerPanelRef") && appHtml.includes('event.key === "Escape"'), "case manager should support focus management and Escape close");
+assert(appHtml.includes("INTERFACE_THEMES") && appHtml.includes("pumpcalc:theme") && appHtml.includes("theme-picker"), "app shell should provide a persistent compact interface theme picker");
+assert(appHtml.includes("Engineering Paper") && appHtml.includes("Control Room Dark") && appHtml.includes("Blueprint"), "theme picker should expose all three engineering palettes");
+assert(appHtml.includes('className="case-toast"') && !appHtml.includes('className="case-notice"'), "case notifications should render outside toolbar flow as a toast");
 const appCss = readFileSync("styles.css", "utf8");
 assert(appCss.includes("@media print"), "print stylesheet should be present");
 assert(appCss.includes(".view[data-screen-label=\"02 Report\"]"), "print stylesheet should force the report view");
@@ -160,6 +163,9 @@ assert(appCss.includes("overflow-x: hidden") && appCss.includes(".field > * { mi
 assert(/\.btn\s*\{\s*all: unset;\s*box-sizing: border-box;/m.test(appCss), "unset full-width buttons should preserve border-box sizing");
 assert(appCss.includes(".case-manager-backdrop") && appCss.includes(".case-manager-row.active"), "case-manager layout should be styled");
 assert(appCss.includes(".tab:focus-visible") && appCss.includes(".cat-del:focus-visible"), "keyboard focus should be visible on tabs and icon buttons");
+assert(appCss.includes('html[data-theme="dark"]') && appCss.includes('html[data-theme="blueprint"]'), "dark and blueprint theme variable palettes should be defined");
+assert(appCss.includes(".print-report") && appCss.includes("white-space: nowrap") && appCss.includes("min-width: 125px"), "print control should have a fixed non-wrapping toolbar footprint");
+assert(appCss.includes(".case-toast") && appCss.includes("position: fixed"), "case notification toast should not participate in toolbar sizing");
 const standaloneHtml = readFileSync("Pump_Calculator_standalone.html", "utf8");
 const standaloneHeaderCount = (standaloneHtml.match(/Centrifugal Pump Calculator/g) || []).length;
 assert(standaloneHeaderCount <= 1, "standalone build should not accumulate duplicate app CSS header comments");

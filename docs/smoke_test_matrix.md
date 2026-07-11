@@ -52,7 +52,7 @@ so it does not depend on CDN access during the test.
 
 ```text
 smoke-test: duty solve, parallel case, and pipe helpers passed
-browser-smoke-test: flags, panel layout, accessible tabs, chart hover, new case, case manager, share link, metadata, case import/export, numeric inputs, units, and report print title passed
+browser-smoke-test: themes, stable toolbar, flags, panel layout, accessible tabs, chart hover, cases, metadata, units, and report print passed
 verify-formulas: all 85 first-principles checks passed
 ```
 
@@ -99,6 +99,8 @@ calculation or workflow assertion that failed.
 | Browser chart workflow | Passive hover readout appears when a pointer-move event is dispatched over the chart. |
 | Browser numeric workflow | Partial decimal draft preservation and comma-decimal parsing for a real calculator input. |
 | Browser unit workflow | SI to US toggle updates the visible app shell. |
+| Browser theme workflow | Theme popover is accessible, Dark applies and persists across reload, and Paper restores independently from case data. |
+| Browser toolbar stability | A long snapshot notification renders as a fixed toast while the Print Report / PDF button retains its width and single-line label. |
 | Browser print workflow | `Print Report / PDF` routes from Compare to Report, temporarily sets a metadata-based document title for PDF filenames, then restores the app title. |
 
 ## Not Covered Yet

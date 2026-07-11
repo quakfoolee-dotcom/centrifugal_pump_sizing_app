@@ -13,7 +13,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const APP_VERSION = "0.11.0";
+const APP_VERSION = "0.11.1";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
@@ -403,9 +403,39 @@ async function main() {
     await evaluate(cdp, sessionId, `localStorage.clear(); location.reload(); true`);
     await waitForEval(cdp, sessionId, `document.readyState === 'complete'`, "reload");
     await waitForEval(cdp, sessionId, `Boolean(window.PumpCases && window.computeDuty && document.querySelector('.case-name'))`, "app bootstrap after reload");
-    await evaluate(cdp, sessionId, setupPageHarnessScript());
-
     assert(await waitForEval(cdp, sessionId, `window.PumpCases.APP_VERSION === ${JSON.stringify(APP_VERSION)}`, "app version"), "app version should match release");
+    assert(await evaluate(cdp, sessionId, `(() => {
+      const picker = document.querySelector('.theme-picker');
+      const trigger = picker?.querySelector('summary');
+      if (!picker || !trigger || !trigger.getAttribute('aria-label')?.includes('Current theme')) return false;
+      picker.open = true;
+      const option = [...picker.querySelectorAll('.theme-option')].find(button => button.textContent.includes('Control Room Dark'));
+      option?.click();
+      return Boolean(option);
+    })()`), "theme picker should select Control Room Dark");
+    assert(await waitForEval(cdp, sessionId, `document.documentElement.dataset.theme === 'dark'
+      && document.body.dataset.theme === 'dark'
+      && localStorage.getItem('pumpcalc:theme') === 'dark'`, "dark theme selection"), "theme selection should apply and persist outside case state");
+    await evaluate(cdp, sessionId, `location.reload(); true`);
+    await waitForEval(cdp, sessionId, `document.readyState === 'complete'`, "theme reload");
+    await waitForEval(cdp, sessionId, `Boolean(window.PumpCases && document.querySelector('.theme-picker'))`, "theme app bootstrap after reload");
+    assert(await waitForEval(cdp, sessionId, `document.documentElement.dataset.theme === 'dark'`, "persisted dark theme"), "selected theme should survive reload");
+    assert(await evaluate(cdp, sessionId, `(() => {
+      const picker = document.querySelector('.theme-picker');
+      picker.open = true;
+      const option = [...picker.querySelectorAll('.theme-option')].find(button => button.textContent.includes('Engineering Paper'));
+      option?.click();
+      return Boolean(option);
+    })()`), "theme picker should restore Engineering Paper");
+    assert(await waitForEval(cdp, sessionId, `document.documentElement.dataset.theme === 'paper'`, "paper theme restore"), "paper theme should restore before workflow tests");
+    await evaluate(cdp, sessionId, setupPageHarnessScript());
+    assert(await evaluate(cdp, sessionId, `(() => {
+      const button = document.querySelector('.print-report');
+      if (!button) return false;
+      window.__printButtonWidth = button.getBoundingClientRect().width;
+      const styles = getComputedStyle(button);
+      return styles.whiteSpace === 'nowrap' && window.__printButtonWidth >= 124;
+    })()`), "print button should begin with a fixed non-wrapping width");
     assert(await waitForEval(cdp, sessionId, `(() => {
       const tabs = [...document.querySelectorAll('[role="tab"]')];
       return document.querySelector('.topbar-tabs')?.getAttribute('role') === 'tablist'
@@ -512,6 +542,16 @@ async function main() {
         && cases[snapshotName]?.meta?.tag === 'P-BROWSER-EDIT'
         && [...document.querySelectorAll('.text-field input')][1]?.value === 'P-BROWSER';
     })()`, "dirty load snapshot"), "loading a saved case should protect unsaved current work with a snapshot");
+    assert(await waitForEval(cdp, sessionId, `(() => {
+      const toast = document.querySelector('.case-toast');
+      const print = document.querySelector('.print-report');
+      if (!toast || !print) return false;
+      const width = print.getBoundingClientRect().width;
+      return toast.textContent.includes('Saved snapshot')
+        && Math.abs(width - window.__printButtonWidth) < 0.5
+        && print.scrollWidth <= print.clientWidth + 1
+        && getComputedStyle(toast).position === 'fixed';
+    })()`, "stable toolbar after case notice"), "case notice should render as a toast without resizing or wrapping the print control");
 
     await setMetadata(cdp, sessionId, 1, "P-BROWSER-NEW-DIRTY");
     assert(await evaluate(cdp, sessionId, clickTextScript("New")), "New button should be clickable");
@@ -639,7 +679,7 @@ async function main() {
     })()`, "report print title"), "print should use report metadata as the temporary PDF title and then restore the app title");
 
     assert(cdp.exceptions.length === 0, `browser runtime exceptions:\n${cdp.exceptions.join("\n")}`);
-    console.log("browser-smoke-test: flags, panel layout, accessible tabs, chart hover, new case, case manager, share link, metadata, case import/export, numeric inputs, units, and report print title passed");
+    console.log("browser-smoke-test: themes, stable toolbar, flags, panel layout, accessible tabs, chart hover, cases, metadata, units, and report print passed");
   } finally {
     try { await cdp?.send("Browser.close"); } catch {}
     if (browserRef?.browser && !browserRef.browser.killed) browserRef.browser.kill();

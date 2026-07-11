@@ -44,7 +44,7 @@ const css = [fontFaceCss, appCss].filter(Boolean).join("\n\n");
 
 let templateHtml = readFileSync(appPath, "utf8");
 templateHtml = templateHtml.replace(
-  /<link rel="stylesheet" href="styles\.css" \/>/,
+  /<link rel="stylesheet" href="styles\.css(?:\?[^\"]*)?" \/>/,
   `<style>${css}</style>`
 );
 
