@@ -41,3 +41,39 @@ jobs:
 
       - name: Build release package
         run: npm run package:release
+
+  desktop:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Audit shipped runtime dependencies
+        run: npm run audit:runtime
+
+      - name: Build Windows desktop packages
+        run: npm run desktop:make
+
+      - name: Smoke test packaged desktop application
+        run: npm run desktop:smoke
+
+      - name: Verify Windows desktop artifacts
+        run: npm run desktop:verify-artifacts
+
+      - name: Upload Windows desktop artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: centrifugal-pump-sizing-windows-v0.11.1
+          path: out/make/**
+          if-no-files-found: error
+          retention-days: 14

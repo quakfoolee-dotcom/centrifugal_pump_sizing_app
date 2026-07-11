@@ -7,6 +7,21 @@ through [GitHub Releases](https://github.com/quakfoolee-dotcom/centrifugal_pump_
 and the hosted application is deployed through
 [GitHub Pages](https://quakfoolee-dotcom.github.io/centrifugal_pump_sizing_app/).
 
+## Windows Desktop Edition
+
+The project includes an Electron Forge desktop shell that embeds the offline
+application, blocks renderer access to Node.js, and adds native print and PDF
+commands. Build an unsigned Windows x64 installer and portable ZIP with:
+
+```powershell
+npm ci
+npm run desktop:make
+npm run desktop:verify-artifacts
+```
+
+See `docs/desktop_packaging.md` for installation, security, data persistence,
+CI, and code-signing guidance.
+
 ## What It Does
 
 - Computes the **system curve** and finds the **duty point** where the pump and system curves intersect — live, as you edit.
