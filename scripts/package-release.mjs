@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,6 +8,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const manifest = JSON.parse(readFileSync(path.join(repoRoot, "release-manifest.json"), "utf8"));
 const version = manifest.version;
 const outputRoot = path.join(repoRoot, "dist", "release", `v${version}`);
+const normalizeText = text => text.replace(/\r\n?/g, "\n");
 
 const packageVersion = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8")).version;
 const appVersionMatch = readFileSync(path.join(repoRoot, "lib", "caseLibrary.js"), "utf8")
@@ -38,7 +39,8 @@ const files = [
 ];
 
 for (const [source, target] of files) {
-  copyFileSync(path.join(repoRoot, source), path.join(outputRoot, target));
+  const content = normalizeText(readFileSync(path.join(repoRoot, source), "utf8"));
+  writeFileSync(path.join(outputRoot, target), content, "utf8");
 }
 
 const checksums = files

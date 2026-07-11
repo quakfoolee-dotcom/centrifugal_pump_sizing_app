@@ -4,6 +4,9 @@ import { gzipSync } from "node:zlib";
 const standalonePath = "Pump_Calculator_standalone.html";
 const appPath = "Pump_Calculator.html";
 
+const normalizeText = text => text.replace(/\r\n?/g, "\n");
+const readText = file => normalizeText(readFileSync(file, "utf8"));
+
 if (!existsSync(standalonePath)) {
   throw new Error(`Missing ${standalonePath}; cannot preserve offline wrapper assets`);
 }
@@ -25,7 +28,7 @@ const ids = {
 const manifestRe = /<script type="__bundler\/manifest">\s*([\s\S]*?)\s*<\/script>/;
 const templateRe = /<script type="__bundler\/template">\s*([\s\S]*?)\s*<\/script>/;
 
-const wrapper = readFileSync(standalonePath, "utf8");
+const wrapper = readText(standalonePath);
 const manifestMatch = wrapper.match(manifestRe);
 const templateMatch = wrapper.match(templateRe);
 if (!manifestMatch || !templateMatch) {
@@ -33,16 +36,16 @@ if (!manifestMatch || !templateMatch) {
 }
 
 const manifest = JSON.parse(manifestMatch[1]);
-const oldTemplate = JSON.parse(templateMatch[1]);
+const oldTemplate = normalizeText(JSON.parse(templateMatch[1]));
 const oldStyle = oldTemplate.match(/<style>([\s\S]*?)<\/style>/i)?.[1] || "";
 const fontFaceCss = Array.from(oldStyle.matchAll(/@font-face\s*\{[\s\S]*?\}/g), match => match[0])
   .join("\n\n");
-const appCss = readFileSync("styles.css", "utf8")
+const appCss = readText("styles.css")
   .replace(/@import\s+url\([^)]+\);\s*/g, "")
   .trimStart();
 const css = [fontFaceCss, appCss].filter(Boolean).join("\n\n");
 
-let templateHtml = readFileSync(appPath, "utf8");
+let templateHtml = readText(appPath);
 templateHtml = templateHtml.replace(
   /<link rel="stylesheet" href="styles\.css(?:\?[^\"]*)?" \/>/,
   `<style>${css}</style>`
@@ -67,11 +70,16 @@ for (const [from, to] of srcReplacements) {
 }
 
 function upsertTextAsset(id, file) {
+  const compressed = gzipSync(Buffer.from(readText(file), "utf8"), {
+    level: 9,
+    mtime: 0,
+  });
+  compressed[9] = 255;
   manifest[id] = {
     ...(manifest[id] || {}),
     mime: "text/javascript",
     compressed: true,
-    data: gzipSync(Buffer.from(readFileSync(file, "utf8"), "utf8")).toString("base64"),
+    data: compressed.toString("base64"),
   };
 }
 
